@@ -65,7 +65,8 @@ fi
 
 echo ""
 echo "==> 下一步"
-echo "    npm install          # 使用 .npmrc 国内镜像安装依赖"
-echo "    npm run start:cn     # 启动 Expo 开发服务"
+echo "    npm run aptool:build   # 构建 CLI"
+echo "    npm run aptool         # 交互模式 / npm run aptool -- help"
+echo "    aptool shell install   # 可选：注入 zsh 全局命令"
 echo ""
 echo "    完整说明见 docs/development-china.md"

@@ -22,11 +22,12 @@ nvm use
 # 2. 一键配置国内环境
 npm run setup:cn
 
-# 3. 安装依赖（自动走 .npmrc 镜像）
+# 3. 安装依赖并构建 aptool CLI
 npm install
+npm run aptool:build
 
-# 4. 启动开发服务
-npm run start:cn
+# 4. 启动开发（交互模式）
+npm run aptool
 ```
 
 ## npm 镜像说明

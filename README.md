@@ -38,7 +38,14 @@ npm install
 
 # 启动开发服务器
 npm run start:cn
+
+# 或使用 aptool CLI（推荐）
+npm run aptool:build
+npm run aptool              # 交互模式
+npm run aptool -- adr       # Android Dev Build 真机调试
 ```
+
+详见 [`docs/aptool-cli.md`](docs/aptool-cli.md)。
 
 ### 通用命令
 
@@ -68,8 +75,13 @@ components/
 constants/
   tools.ts              # 工具注册表
   theme.ts              # 主题色
+packages/
+  aptool/               # 开发 CLI（Node/TS）
 design/
   REQUIREMENTS.md       # Pencil 设计需求
+docs/
+  aptool-cli.md         # aptool 使用指南
+  aptool-design.md      # aptool 设计规格
 ```
 
 ## 扩展新工具

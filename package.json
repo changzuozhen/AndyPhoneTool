@@ -2,6 +2,9 @@
   "name": "andyphonetool",
   "main": "expo-router/entry",
   "version": "1.0.0",
+  "workspaces": [
+    "packages/*"
+  ],
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
     "expo": "~57.0.4",
@@ -30,6 +33,9 @@
   },
   "scripts": {
     "setup:cn": "bash scripts/setup-china-env.sh",
+    "aptool": "node packages/aptool/dist/index.js",
+    "aptool:dev": "npm run dev -w @andyphonetool/aptool",
+    "aptool:build": "npm run build -w @andyphonetool/aptool",
     "start": "EXPO_NO_TELEMETRY=1 expo start",
     "start:cn": "EXPO_NO_TELEMETRY=1 EXPO_USE_METRO_WORKSPACE_ROOT=1 expo start",
     "android": "EXPO_NO_TELEMETRY=1 expo start --android",
