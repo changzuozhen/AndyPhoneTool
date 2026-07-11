@@ -43,7 +43,7 @@ export const commandRegistry: CommandMeta[] = [
     id: 'dev:run-ios',
     group: 'dev',
     action: 'run-ios',
-    description: 'Dev Build 真机/模拟器 iOS',
+    description: 'Dev Build 真机 iOS（默认优先已连接真机）',
     examples: ['aptool dev run-ios', 'aptool ai'],
     longTask: true,
   },

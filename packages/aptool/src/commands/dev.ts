@@ -3,22 +3,34 @@ import { join } from 'node:path';
 import { cancel, confirm, isCancel, select } from '@clack/prompts';
 
 import type { ProjectContext } from '../lib/project.js';
-import { runExpo, runNpmScript, runWithSteps, runCommand } from '../lib/executor.js';
+import {
+  runWithSteps,
+  runCommand,
+  runExpoLongTask,
+  runNpmScriptLongTask,
+} from '../lib/executor.js';
 import { findProjectRoot } from '../lib/project.js';
+import {
+  type IosTargetOptions,
+  listPhysicalIosDevices,
+  resolveIosRunTarget,
+  printIosTargetHint,
+  IOS_METRO_HINT,
+} from '../lib/ios-devices.js';
 
 export async function devStart(): Promise<void> {
   const root = findProjectRoot();
-  await runNpmScript(root, 'start:cn');
+  await runNpmScriptLongTask(root, 'start:cn', 'Metro 开发服务');
 }
 
 export async function devAndroid(): Promise<void> {
   const root = findProjectRoot();
-  await runNpmScript(root, 'android');
+  await runNpmScriptLongTask(root, 'android', 'Expo Go · Android');
 }
 
 export async function devIos(): Promise<void> {
   const root = findProjectRoot();
-  await runNpmScript(root, 'ios');
+  await runNpmScriptLongTask(root, 'ios', 'Expo Go · iOS');
 }
 
 export async function devRunAndroid(): Promise<void> {
@@ -34,9 +46,31 @@ export async function devRunAndroid(): Promise<void> {
   });
 }
 
-export async function devRunIos(): Promise<void> {
+export async function devRunIos(options?: IosTargetOptions): Promise<void> {
   const root = findProjectRoot();
-  await runExpo(root, ['run:ios']);
+  const target = resolveIosRunTarget(['run:ios'], options);
+
+  const { terminal } = await import('../lib/terminal.js');
+  terminal.clear();
+  terminal.setTitle(`⏳ aptool: iOS Dev Build → ${target.label}`);
+  printIosTargetHint(target);
+
+  try {
+    await runWithSteps({
+      cwd: root,
+      longTask: false,
+      taskTitle: 'iOS Dev Build',
+      steps: [
+        { title: '检查/生成 iOS 原生工程', command: 'npx', args: ['expo', 'prebuild', '--platform', 'ios'] },
+        { title: `构建并安装 → ${target.label}`, command: 'npx', args: ['expo', ...target.expoArgs] },
+      ],
+    });
+    terminal.setTitle('✓ aptool: iOS Dev Build 完成');
+    console.log(`\n${IOS_METRO_HINT}`);
+  } catch (error) {
+    terminal.setTitle('✗ aptool: iOS Dev Build 失败');
+    throw error;
+  }
 }
 
 export async function buildAndroid(variant: 'debug' | 'release'): Promise<void> {
@@ -62,22 +96,25 @@ export async function buildAndroid(variant: 'debug' | 'release'): Promise<void> 
   }
 }
 
-export async function buildIos(variant: 'debug' | 'release'): Promise<void> {
+export async function buildIos(
+  variant: 'debug' | 'release',
+  options?: IosTargetOptions,
+): Promise<void> {
   const root = findProjectRoot();
   const configuration = variant === 'debug' ? 'Debug' : 'Release';
+  const target = resolveIosRunTarget(['run:ios', '--configuration', configuration], options);
 
   const ok = await confirm({
-    message: `即将构建 iOS ${configuration}，需本机 Xcode 环境。继续？`,
+    message: `即将构建 iOS ${configuration} → ${target.label}。继续？`,
   });
   if (isCancel(ok) || !ok) {
     cancel('已取消');
     return;
   }
 
-  const { terminal } = await import('../lib/terminal.js');
-  await terminal.withLongTask(`iOS ${configuration} 构建`, async () => {
-    await runExpo(root, ['run:ios', '--configuration', configuration]);
-  });
+  printIosTargetHint(target);
+  await runExpoLongTask(root, target.expoArgs, `iOS ${configuration} → ${target.label}`);
+  console.log(`\n${IOS_METRO_HINT}`);
 }
 
 export async function envSetupCn(): Promise<void> {
@@ -85,35 +122,38 @@ export async function envSetupCn(): Promise<void> {
   await runCommand('bash', ['scripts/setup-china-env.sh'], { cwd: root });
 }
 
-export async function promptDevMenu(ctx: ProjectContext): Promise<void> {
+async function pickIosDeviceIfNeeded(options?: IosTargetOptions): Promise<IosTargetOptions | undefined> {
+  if (options?.simulator || options?.device) return options;
+
+  const devices = listPhysicalIosDevices();
+  if (devices.length <= 1) return options;
+
+  const choice = await select({
+    message: '选择 iOS 安装目标',
+    options: [
+      ...devices.map((d) => ({
+        value: d.name,
+        label: `${d.name}（${d.model}）`,
+        hint: '真机',
+      })),
+      { value: '__simulator__', label: '模拟器', hint: '无相机/闪光灯完整能力' },
+    ],
+  });
+
+  if (isCancel(choice)) return options;
+  if (choice === '__simulator__') return { simulator: true };
+  return { device: choice as string };
+}
+
+export async function promptDevMenu(_ctx: ProjectContext): Promise<void> {
   const choice = await select({
     message: '开发调试',
     options: [
-      {
-        value: 'start',
-        label: '启动 Metro 开发服务',
-        hint: 'aptool dev start',
-      },
-      {
-        value: 'expo-android',
-        label: 'Expo Go 快速预览 Android',
-        hint: 'aptool dev android',
-      },
-      {
-        value: 'expo-ios',
-        label: 'Expo Go 快速预览 iOS',
-        hint: 'aptool dev ios',
-      },
-      {
-        value: 'run-android',
-        label: 'Dev Build 真机 Android [推荐]',
-        hint: 'aptool dev run-android — 相机/闪光灯完整',
-      },
-      {
-        value: 'run-ios',
-        label: 'Dev Build 真机/模拟器 iOS',
-        hint: 'aptool dev run-ios',
-      },
+      { value: 'start', label: '启动 Metro 开发服务', hint: 'aptool dev start' },
+      { value: 'expo-android', label: 'Expo Go 快速预览 Android', hint: 'aptool dev android' },
+      { value: 'expo-ios', label: 'Expo Go 快速预览 iOS', hint: 'aptool dev ios' },
+      { value: 'run-android', label: 'Dev Build 真机 Android [推荐]', hint: 'aptool dev run-android' },
+      { value: 'run-ios', label: 'Dev Build 真机 iOS [推荐]', hint: 'aptool dev run-ios' },
       { value: 'back', label: '‹ 返回' },
     ],
   });
@@ -133,9 +173,11 @@ export async function promptDevMenu(ctx: ProjectContext): Promise<void> {
     case 'run-android':
       await devRunAndroid();
       break;
-    case 'run-ios':
-      await devRunIos();
+    case 'run-ios': {
+      const iosOpts = await pickIosDeviceIfNeeded();
+      await devRunIos(iosOpts);
       break;
+    }
   }
 }
 
@@ -153,15 +195,14 @@ export async function promptBuildMenu(): Promise<void> {
   const variant = await select({
     message: '选择构建类型',
     options: [
-      { value: 'debug', label: 'Debug', hint: platform === 'android' ? 'aptool build android debug' : 'aptool build ios debug' },
-      { value: 'release', label: 'Release', hint: platform === 'android' ? 'aptool build android release' : 'aptool build ios release' },
+      { value: 'debug', label: 'Debug' },
+      { value: 'release', label: 'Release' },
       { value: 'back', label: '‹ 返回' },
     ],
   });
   if (isCancel(variant) || variant === 'back') return;
 
-  const fullCmd = `aptool build ${platform} ${variant}`;
-  const ok = await confirm({ message: `确认执行：${fullCmd}？` });
+  const ok = await confirm({ message: `确认执行：aptool build ${platform} ${variant}？` });
   if (isCancel(ok) || !ok) {
     cancel('已取消');
     return;
@@ -170,6 +211,7 @@ export async function promptBuildMenu(): Promise<void> {
   if (platform === 'android') {
     await buildAndroid(variant as 'debug' | 'release');
   } else {
-    await buildIos(variant as 'debug' | 'release');
+    const iosOpts = await pickIosDeviceIfNeeded();
+    await buildIos(variant as 'debug' | 'release', iosOpts);
   }
 }

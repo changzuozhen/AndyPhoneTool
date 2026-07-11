@@ -45,8 +45,12 @@ export function createCli(): Command {
 
   dev
     .command('run-ios')
-    .description('Dev Build 真机/模拟器 iOS')
-    .action(async () => devRunIos());
+    .description('Dev Build iOS（默认优先已连接真机）')
+    .option('--simulator', '强制使用模拟器')
+    .option('-d, --device <name>', '指定设备安装（如 "Andy iPhone13"）')
+    .action(async (opts: { simulator?: boolean; device?: string }) =>
+      devRunIos({ simulator: opts.simulator, device: opts.device }),
+    );
 
   const build = program.command('build').description('本地构建安装包');
 
@@ -63,13 +67,15 @@ export function createCli(): Command {
 
   build
     .command('ios')
-    .description('iOS 构建')
+    .description('iOS 构建（默认优先已连接真机）')
     .argument('<variant>', 'debug | release')
-    .action(async (variant: string) => {
+    .option('--simulator', '强制使用模拟器')
+    .option('-d, --device <name>', '指定设备安装')
+    .action(async (variant: string, opts: { simulator?: boolean; device?: string }) => {
       if (variant !== 'debug' && variant !== 'release') {
         throw new Error('variant 必须是 debug 或 release');
       }
-      await buildIos(variant);
+      await buildIos(variant, { simulator: opts.simulator, device: opts.device });
     });
 
   const env = program.command('env').description('环境配置');

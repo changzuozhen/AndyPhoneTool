@@ -83,6 +83,32 @@ export async function runExpo(
   await runCommand('npx', ['expo', ...args], { cwd, env });
 }
 
+/** 长任务：清屏 + 修改终端标题 + 执行 expo 命令 */
+export async function runExpoLongTask(
+  cwd: string,
+  expoArgs: string[],
+  taskTitle: string,
+  env?: Record<string, string>,
+): Promise<void> {
+  const { terminal } = await import('./terminal.js');
+  await terminal.withLongTask(taskTitle, async () => {
+    await runExpo(cwd, expoArgs, env);
+  });
+}
+
+/** 长任务：清屏 + 修改终端标题 + 执行 npm script */
+export async function runNpmScriptLongTask(
+  cwd: string,
+  script: string,
+  taskTitle: string,
+  extraArgs: string[] = [],
+): Promise<void> {
+  const { terminal } = await import('./terminal.js');
+  await terminal.withLongTask(taskTitle, async () => {
+    await runNpmScript(cwd, script, extraArgs);
+  });
+}
+
 export async function ensureAndroidPrebuild(cwd: string): Promise<void> {
   const { existsSync } = await import('node:fs');
   const { join } = await import('node:path');

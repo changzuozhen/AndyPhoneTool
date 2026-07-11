@@ -78,6 +78,18 @@ npm run aptool
 
 每步展示全局配置（项目路径、Node、native 目录、镜像源），菜单项附带等价完整命令。
 
-## 长任务
+### iOS Dev Build 与真机
 
-构建类命令会自动清屏并修改终端标题，步骤通过 listr2 展示。
+`aptool dev run-ios` / `aptool ai` **默认优先安装到已连接的 iPhone**（通过 `xcrun devicectl` 检测）。
+
+```bash
+aptool dev run-ios                    # 自动选真机（如 Andy iPhone13）
+aptool dev run-ios --device "Andy iPhone13"
+aptool dev run-ios --simulator        # 强制模拟器
+```
+
+若红屏 **"No script URL"**：等待 Metro 日志出现 Bundled 后按 **⌘R** 重载 App，或重新运行命令。相机/闪光灯需真机。
+
+### 长任务体验
+
+构建类命令会自动**清屏**并修改**终端标题**，步骤通过 listr2 展示。
