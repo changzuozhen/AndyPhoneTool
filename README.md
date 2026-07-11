@@ -66,15 +66,17 @@ npm run android
 ## 项目结构
 
 ```
-app/
-  (tabs)/index.tsx      # 工具导航首页
-  tools/camera-flash.tsx # 手电筒相机
-components/
-  ToolCard.tsx          # 工具入口卡片
-  BrightnessSlider.tsx  # 闪光灯亮度滑杆
-constants/
-  tools.ts              # 工具注册表
-  theme.ts              # 主题色
+src/
+  app/
+    (tabs)/index.tsx      # 工具导航首页
+    tools/camera-flash.tsx # 手电筒相机
+  components/
+    ToolCard.tsx          # 工具入口卡片
+    BrightnessSlider.tsx  # 闪光灯亮度滑杆
+  constants/
+    tools.ts              # 工具注册表
+    theme.ts              # 主题色
+  assets/                 # 图片、字体等资源
 packages/
   aptool/               # 开发 CLI（Node/TS）
 design/
@@ -86,9 +88,9 @@ docs/
 
 ## 扩展新工具
 
-1. 在 `constants/tools.ts` 的 `TOOLS` 数组中注册工具
-2. 在 `app/tools/` 下新增页面
-3. 在 `app/_layout.tsx` 的 Stack 中注册路由
+1. 在 `src/constants/tools.ts` 的 `TOOLS` 数组中注册工具
+2. 在 `src/app/tools/` 下新增页面
+3. 在 `src/app/_layout.tsx` 的 Stack 中注册路由
 
 ## License
 
