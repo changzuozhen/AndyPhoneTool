@@ -10,24 +10,25 @@
 | `.nvmrc` | 推荐 Node 20 LTS |
 | `.env.example` | 可选环境变量模板 |
 | `plugins/withChinaMirrors.js` | `expo prebuild` 时自动注入 Android Maven 国内源 |
-| `scripts/setup-china-env.sh` | 一键检测并配置本地环境 |
+| `scripts/setup.sh` | **新机器一键配置**（镜像 + 依赖 + aptool + 验证） |
+| `scripts/setup-china-env.sh` | 仅配置国内镜像与 `.env.local` |
 
 ## 快速开始
 
+新机器请直接使用一键配置，见 **[setup.md](setup.md)**。
+
 ```bash
-# 1. 使用 nvm 切换到推荐 Node 版本（可选）
-nvm install
-nvm use
+git clone https://github.com/changzuozhen/AndyPhoneTool.git
+cd AndyPhoneTool
+nvm install && nvm use   # 可选
+npm run setup            # 镜像 + 依赖 + aptool 构建
+npm run setup -- --zsh   # 可选：全局 aptool
+```
 
-# 2. 一键配置国内环境
+仅刷新镜像（不重装依赖）：
+
+```bash
 npm run setup:cn
-
-# 3. 安装依赖并构建 aptool CLI
-npm install
-npm run aptool:build
-
-# 4. 启动开发（交互模式）
-npm run aptool
 ```
 
 ## npm 镜像说明
@@ -43,7 +44,8 @@ registry=https://registry.npmmirror.com
 npm 安装时的二进制包镜像请使用：
 
 ```bash
-source scripts/npm-mirror.env && npm install
+source scripts/npm-binary-mirrors.env && npm install
+# 或 npm run setup（自动处理）
 ```
 
 如需临时切回官方源（海外网络）：

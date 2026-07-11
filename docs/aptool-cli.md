@@ -4,6 +4,16 @@
 
 ## 快速开始
 
+新机器推荐：
+
+```bash
+npm run setup            # 一键：镜像 + 依赖 + 构建
+npm run setup -- --zsh   # 可选：全局 aptool
+source ~/.zshrc
+```
+
+手动步骤：
+
 ```bash
 # 构建 CLI（首次或源码变更后）
 npm run aptool:build
@@ -15,11 +25,13 @@ npm run aptool
 npm run aptool -- dev run-android
 npm run aptool -- adr          # 快捷码
 
-# 全局使用（可选，仅注入一个 zsh function）
+# 全局使用（可选）
 npm run aptool -- shell install
 source ~/.zshrc
 aptool adr
 ```
+
+详见 [setup.md](setup.md)。
 
 ## 命令一览
 

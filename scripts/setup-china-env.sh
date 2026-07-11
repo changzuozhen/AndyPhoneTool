@@ -56,9 +56,12 @@ else
 fi
 
 echo ""
-echo "==> 下一步"
-echo "    npm run aptool:build   # 构建 CLI"
-echo "    npm run aptool         # 交互模式 / npm run aptool -- help"
-echo "    aptool shell install   # 可选：注入 zsh 全局命令"
+echo "==> 下一步（新机器推荐直接运行）"
+echo "    npm run setup            # 一键完整配置"
+echo "    npm run setup -- --zsh   # 额外注入 zsh 全局 aptool"
 echo ""
-echo "    完整说明见 docs/development-china.md"
+echo "    或手动:"
+echo "    npm run aptool           # 交互模式"
+echo "    npm run aptool -- shell install"
+echo ""
+echo "    完整说明见 docs/setup.md"

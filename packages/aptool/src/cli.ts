@@ -84,7 +84,8 @@ export function createCli(): Command {
   shell
     .command('install')
     .description('向 ~/.zshrc 注入 aptool 函数')
-    .action(async () => shellInstall());
+    .option('-y, --yes', '跳过确认（供 setup 脚本使用）')
+    .action(async (opts: { yes?: boolean }) => shellInstall({ yes: opts.yes }));
 
   shell
     .command('uninstall')

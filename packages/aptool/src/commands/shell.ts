@@ -39,7 +39,7 @@ export function shellStatus(): void {
   console.log(`CLI 已构建: ${existsSync(cliPath) ? '是' : '否（请先 npm run aptool:build）'}`);
 }
 
-export async function shellInstall(): Promise<void> {
+export async function shellInstall(options?: { yes?: boolean }): Promise<void> {
   const root = findProjectRoot();
   const cliPath = join(root, 'packages/aptool/dist/index.js');
 
@@ -58,12 +58,14 @@ export async function shellInstall(): Promise<void> {
     return;
   }
 
-  const ok = await confirm({
-    message: `将向 ~/.zshrc 注入 aptool 函数（仅 3 行，无 alias）。继续？`,
-  });
-  if (isCancel(ok) || !ok) {
-    cancel('已取消');
-    return;
+  if (!options?.yes) {
+    const ok = await confirm({
+      message: `将向 ~/.zshrc 注入 aptool 函数（仅 3 行，无 alias）。继续？`,
+    });
+    if (isCancel(ok) || !ok) {
+      cancel('已取消');
+      return;
+    }
   }
 
   const block = buildBlock(root, cliPath);
