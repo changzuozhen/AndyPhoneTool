@@ -91,7 +91,7 @@ final class NetSpeedPiPSession: NSObject {
       throw NetSpeedPiPError.noWindow
     }
 
-    let view = SpeedPiPView(frame: CGRect(x: 0, y: 0, width: 320, height: 96))
+    let view = SpeedPiPView(frame: CGRect(x: 0, y: 0, width: 360, height: 56))
     view.alpha = 0.01
     view.isUserInteractionEnabled = false
     window.addSubview(view)

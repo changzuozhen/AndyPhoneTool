@@ -16,6 +16,13 @@ import { PrimaryButton } from '@/components/PrimaryButton';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { StatusRow } from '@/components/StatusRow';
 import { AppLayout, AppTheme } from '@/constants/theme';
+import {
+  ensureAndroidNotificationPermission,
+  getPermissionGuide,
+  getPlatformHint,
+  mapOverlayError,
+  openAppSettings,
+} from '@/lib/netSpeedOverlay';
 import NetSpeedOverlay from 'net-speed-overlay';
 
 type OverlayState = {
@@ -24,12 +31,15 @@ type OverlayState = {
   running: boolean;
 };
 
+const RUNNING_REFRESH_MS = 2000;
+
 export default function NetSpeedToolScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [awaitingPermissionReturn, setAwaitingPermissionReturn] = useState(false);
   const [state, setState] = useState<OverlayState>({
     supported: false,
     hasPermission: false,
@@ -47,6 +57,11 @@ export default function NetSpeedToolScreen() {
       hasPermission,
       running,
     });
+
+    if (hasPermission) {
+      setAwaitingPermissionReturn(false);
+      setError(null);
+    }
   }, []);
 
   useEffect(() => {
@@ -75,12 +90,34 @@ export default function NetSpeedToolScreen() {
     return () => subscription.remove();
   }, [refreshState]);
 
+  useEffect(() => {
+    if (!state.running) {
+      return;
+    }
+
+    const timer = setInterval(() => {
+      refreshState().catch(() => {});
+    }, RUNNING_REFRESH_MS);
+
+    return () => clearInterval(timer);
+  }, [state.running, refreshState]);
+
   const handleRequestPermission = async () => {
     setBusy(true);
     setError(null);
+    setAwaitingPermissionReturn(true);
     try {
-      await NetSpeedOverlay.requestPermission();
-      await refreshState();
+      const granted = await NetSpeedOverlay.requestPermission();
+      if (granted) {
+        await refreshState();
+        return;
+      }
+
+      if (Platform.OS === 'android') {
+        setError('请在系统设置中开启权限，返回 App 后点击「刷新状态」。');
+      } else {
+        await refreshState();
+      }
     } finally {
       setBusy(false);
     }
@@ -93,11 +130,14 @@ export default function NetSpeedToolScreen() {
       if (state.running) {
         await NetSpeedOverlay.stop();
       } else {
+        if (Platform.OS === 'android') {
+          await ensureAndroidNotificationPermission();
+        }
         await NetSpeedOverlay.start();
       }
       await refreshState();
     } catch (e) {
-      setError(e instanceof Error ? e.message : '操作失败，请稍后重试');
+      setError(mapOverlayError(e));
     } finally {
       setBusy(false);
     }
@@ -140,10 +180,17 @@ export default function NetSpeedToolScreen() {
           <Text style={styles.heroTitle}>实时网速 · 盖在其他 App 上</Text>
           <Text style={styles.heroText}>
             {Platform.OS === 'ios'
-              ? '开启后请切到后台，系统会以画中画小窗显示网速。'
+              ? '开启后系统会启动画中画小窗；切到桌面或其他 App 即可看到实时网速。'
               : '开启后可在任意 App 上方看到悬浮网速条，按住可拖动位置。'}
           </Text>
         </View>
+
+        {state.running ? (
+          <View style={styles.bannerSuccess}>
+            <Ionicons name="checkmark-circle" size={18} color={AppTheme.success} />
+            <Text style={styles.bannerText}>{getPlatformHint(true)}</Text>
+          </View>
+        ) : null}
 
         <View style={styles.card}>
           <StatusRow
@@ -163,17 +210,36 @@ export default function NetSpeedToolScreen() {
           />
         </View>
 
-        {!state.hasPermission && (
+        {!state.hasPermission ? (
+          <View style={styles.guideCard}>
+            <Text style={styles.guideTitle}>需要权限</Text>
+            <Text style={styles.guideText}>{getPermissionGuide()}</Text>
+          </View>
+        ) : null}
+
+        {!state.hasPermission ? (
           <PrimaryButton
             label={
               Platform.OS === 'android'
                 ? '前往授权「显示在其他应用上层」'
-                : '检查画中画可用性'
+                : '确认画中画可用性'
             }
             onPress={handleRequestPermission}
             disabled={busy}
           />
-        )}
+        ) : null}
+
+        {!state.hasPermission && awaitingPermissionReturn ? (
+          <Pressable style={styles.linkButton} onPress={() => refreshState().catch(() => {})}>
+            <Text style={styles.linkButtonText}>刷新状态</Text>
+          </Pressable>
+        ) : null}
+
+        {!state.hasPermission && Platform.OS === 'android' ? (
+          <Pressable style={styles.linkButton} onPress={openAppSettings}>
+            <Text style={styles.linkButtonText}>打开系统设置</Text>
+          </Pressable>
+        ) : null}
 
         <PrimaryButton
           label={state.running ? '停止悬浮窗' : '开启悬浮窗'}
@@ -184,11 +250,7 @@ export default function NetSpeedToolScreen() {
 
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-        <Text style={styles.note}>
-          {Platform.OS === 'android'
-            ? 'Android 已支持系统悬浮窗与 TrafficStats 实时网速。iOS 画中画将在后续阶段实现。'
-            : 'iOS 画中画实现将在后续阶段完成。'}
-        </Text>
+        {!state.running ? <Text style={styles.note}>{getPlatformHint(false)}</Text> : null}
       </View>
     </View>
   );
@@ -237,6 +299,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
+  bannerSuccess: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    padding: 12,
+    borderRadius: AppLayout.cardRadius,
+    backgroundColor: 'rgba(74, 222, 128, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(74, 222, 128, 0.25)',
+  },
+  bannerText: {
+    flex: 1,
+    color: AppTheme.textPrimary,
+    fontSize: 13,
+    lineHeight: 18,
+  },
   card: {
     gap: 12,
     padding: 16,
@@ -244,6 +322,33 @@ const styles = StyleSheet.create({
     backgroundColor: AppTheme.surface,
     borderWidth: 1,
     borderColor: AppTheme.border,
+  },
+  guideCard: {
+    gap: 6,
+    padding: 14,
+    borderRadius: AppLayout.cardRadius,
+    backgroundColor: AppTheme.surfaceElevated,
+    borderWidth: 1,
+    borderColor: AppTheme.border,
+  },
+  guideTitle: {
+    color: AppTheme.textPrimary,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  guideText: {
+    color: AppTheme.textSecondary,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  linkButton: {
+    alignSelf: 'center',
+    paddingVertical: 4,
+  },
+  linkButtonText: {
+    color: AppTheme.accent,
+    fontSize: 14,
+    fontWeight: '600',
   },
   unsupportedTitle: {
     color: AppTheme.textPrimary,
@@ -266,7 +371,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   errorText: {
-    color: '#FF8A8A',
+    color: AppTheme.danger,
     fontSize: 13,
     lineHeight: 18,
   },

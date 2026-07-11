@@ -41,10 +41,13 @@ class NetSpeedOverlayModule : Module() {
 
     AsyncFunction("start") {
       val context = appContext.reactContext
-        ?: throw CodedException("E_NO_CONTEXT", "React context is unavailable")
+        ?: throw CodedException("E_NO_CONTEXT", "应用尚未就绪，请返回后重新进入")
 
       if (!canDrawOverlays()) {
-        throw CodedException("E_NO_PERMISSION", "Overlay permission is not granted")
+        throw CodedException(
+          "E_NO_PERMISSION",
+          "未获得悬浮窗权限，请在系统设置中开启「显示在其他应用上层」",
+        )
       }
 
       if (NetSpeedService.isActive) {

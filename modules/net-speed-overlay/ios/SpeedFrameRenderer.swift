@@ -3,8 +3,8 @@ import CoreVideo
 import UIKit
 
 final class SpeedFrameRenderer {
-  private let width = 320
-  private let height = 96
+  private let width = 360
+  private let height = 56
 
   func makeSampleBuffer(downloadBps: Int64, uploadBps: Int64, frameIndex: Int64) -> CMSampleBuffer? {
     guard let pixelBuffer = makePixelBuffer(
@@ -90,23 +90,24 @@ final class SpeedFrameRenderer {
       return nil
     }
 
-    context.setFillColor(UIColor(red: 0.06, green: 0.07, blue: 0.09, alpha: 0.92).cgColor)
+    context.setFillColor(UIColor(red: 0.10, green: 0.11, blue: 0.15, alpha: 0.92).cgColor)
     context.fill(CGRect(x: 0, y: 0, width: width, height: height))
 
     let downloadAttributes: [NSAttributedString.Key: Any] = [
-      .font: UIFont.monospacedSystemFont(ofSize: 15, weight: .semibold),
-      .foregroundColor: UIColor(red: 1.0, green: 0.70, blue: 0.28, alpha: 1.0),
+      .font: UIFont.monospacedSystemFont(ofSize: 12, weight: .bold),
+      .foregroundColor: UIColor(red: 0.29, green: 0.87, blue: 0.50, alpha: 1.0),
     ]
     let uploadAttributes: [NSAttributedString.Key: Any] = [
-      .font: UIFont.monospacedSystemFont(ofSize: 15, weight: .semibold),
-      .foregroundColor: UIColor(red: 0.43, green: 0.76, blue: 1.0, alpha: 1.0),
+      .font: UIFont.monospacedSystemFont(ofSize: 12, weight: .bold),
+      .foregroundColor: UIColor(red: 0.30, green: 0.64, blue: 1.0, alpha: 1.0),
     ]
 
     let download = NSAttributedString(string: downloadText, attributes: downloadAttributes)
     let upload = NSAttributedString(string: uploadText, attributes: uploadAttributes)
 
-    download.draw(in: CGRect(x: 16, y: 18, width: width - 32, height: 24))
-    upload.draw(in: CGRect(x: 16, y: 48, width: width - 32, height: 24))
+    let downloadSize = download.size()
+    download.draw(in: CGRect(x: 12, y: 18, width: downloadSize.width, height: 20))
+    upload.draw(in: CGRect(x: 12 + downloadSize.width + 8, y: 18, width: width - 32, height: 20))
 
     return pixelBuffer
   }

@@ -1,0 +1,25 @@
+---
+description: Git ignore hygiene — always check before staging or committing
+alwaysApply: true
+---
+
+# Git Ignore Hygiene
+
+Apply these rules whenever you stage files or create a commit, even if the user only asked to commit.
+
+## Never stage
+
+- Native build outputs: `modules/**/android/build/`, `modules/**/android/.gradle/`, `modules/**/ios/build/`
+- Prebuild-generated roots: `/android`, `/ios` (already gitignored)
+- Local env/secrets: `.env*.local`, keys, provisioning profiles
+- IDE noise: `.idea/`, `*.iml`, `*.xcuserstate`, `**/xcuserdata/`
+
+## Before every commit
+
+1. Run `git status` and `git diff` — stage only files that belong to the current task.
+2. If unrelated changes appear (e.g. `app.json` `android.package` from prebuild), exclude them unless the task explicitly requires them.
+3. If a new artifact path keeps showing up untracked, add it to `.gitignore` first, then commit the feature.
+
+## When unsure
+
+Prefer a focused commit over bundling generated or unrelated files. Warn the user if they asked to commit something that should stay ignored.

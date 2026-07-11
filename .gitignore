@@ -42,6 +42,20 @@ yarn-error.*
 /ios
 /android
 
+# local expo module native build outputs
+modules/**/android/build/
+modules/**/android/.gradle/
+modules/**/android/.cxx/
+modules/**/ios/build/
+
+# IDE / editor
+.idea/
+*.iml
+local.properties
+*.xcuserstate
+**/xcuserdata/
+.claude/
+
 # aptool build output
 packages/aptool/dist
 
