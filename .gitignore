@@ -44,3 +44,6 @@ yarn-error.*
 
 # aptool build output
 packages/aptool/dist
+
+# npm binary mirror overrides (optional local copy)
+scripts/npm-binary-mirrors.env

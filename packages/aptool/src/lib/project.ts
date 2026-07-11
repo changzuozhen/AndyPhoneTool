@@ -83,7 +83,11 @@ export function loadEnvLocal(root: string): Record<string, string> {
     if (!trimmed || trimmed.startsWith('#')) continue;
     const idx = trimmed.indexOf('=');
     if (idx === -1) continue;
-    env[trimmed.slice(0, idx)] = trimmed.slice(idx + 1);
+    const key = trimmed.slice(0, idx);
+    // 仅加载 Expo 安全变量，避免 NPM_CONFIG_* 等传入子进程
+    if (key.startsWith('EXPO_')) {
+      env[key] = trimmed.slice(idx + 1);
+    }
   }
   return env;
 }

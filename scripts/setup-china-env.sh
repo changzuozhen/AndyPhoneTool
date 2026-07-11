@@ -26,22 +26,14 @@ if command -v npm >/dev/null 2>&1; then
   echo "[ok] npm 用户级 registry -> $REGISTRY"
 fi
 
-# 3. 推荐环境变量写入 .env.local（不覆盖已有文件）
+# 3. 写入 Expo 专用 .env.local（仅 EXPO_* 变量，避免 SDK 57 安全拦截）
 ENV_LOCAL="$ROOT/.env.local"
-if [[ ! -f "$ENV_LOCAL" ]]; then
-  cat > "$ENV_LOCAL" <<'EOF'
+cat > "$ENV_LOCAL" <<'EOF'
 EXPO_NO_TELEMETRY=1
 EXPO_USE_METRO_WORKSPACE_ROOT=1
-NPM_CONFIG_REGISTRY=https://registry.npmmirror.com
-npm_config_disturl=https://npmmirror.com/mirrors/node
-npm_config_electron_mirror=https://npmmirror.com/mirrors/electron/
-npm_config_sharp_binary_host=https://npmmirror.com/mirrors/sharp
-npm_config_sharp_libvips_binary_host=https://npmmirror.com/mirrors/sharp-libvips
 EOF
-  echo "[ok] 已创建 .env.local（含二进制包镜像环境变量）"
-else
-  echo "[--] .env.local 已存在，跳过"
-fi
+echo "[ok] 已更新 .env.local（仅 Expo 安全变量）"
+echo "[ok] npm 镜像由 .npmrc 提供；二进制包镜像: source scripts/npm-binary-mirrors.env && npm install"
 
 # 4. 检查 Node 版本
 if command -v node >/dev/null 2>&1; then

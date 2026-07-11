@@ -38,7 +38,13 @@ npm run aptool
 registry=https://registry.npmmirror.com
 ```
 
-`npm run setup:cn` 还会写入 `.env.local`，通过环境变量配置 sharp、node-gyp 等**二进制包**国内镜像（兼容 npm 10+）。
+`npm run setup:cn` 会更新 `.env.local`，**仅写入 Expo 安全变量**（`EXPO_*`）。npm 镜像由 [`.npmrc`](../.npmrc) 提供；`NPM_CONFIG_*` 等变量不能放入 `.env.local`，否则 Expo SDK 57+ 会拒绝启动。
+
+npm 安装时的二进制包镜像请使用：
+
+```bash
+source scripts/npm-mirror.env && npm install
+```
 
 如需临时切回官方源（海外网络）：
 
