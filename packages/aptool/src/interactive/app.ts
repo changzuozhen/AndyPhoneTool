@@ -5,6 +5,7 @@ import { formatCommandList } from '../config/registry.js';
 import { getShortcutEntries } from '../config/shortcuts.js';
 import { envSetupCn, promptBuildMenu, promptDevMenu } from '../commands/dev.js';
 import { shellInstall, shellStatus, shellUninstall } from '../commands/shell.js';
+import { loadLastRun, saveLastRun, formatLastRunHint } from '../lib/history.js';
 
 function printStatusBar(ctx: ProjectContext, breadcrumb: string): void {
   p.intro('AndyPhoneTool aptool');
@@ -27,16 +28,22 @@ export async function runInteractive(ctx: ProjectContext): Promise<void> {
   while (running) {
     printStatusBar(ctx, '首页');
 
+    const lastHint = formatLastRunHint(loadLastRun(ctx.root));
+    const options = [
+      ...(lastHint
+        ? [{ value: 'repeat' as const, label: '↻ 重复上一次', hint: lastHint }]
+        : []),
+      { value: 'dev' as const, label: '开发调试', hint: 'Metro / Expo Go / Dev Build' },
+      { value: 'build' as const, label: '构建安装包', hint: 'Android / iOS debug & release' },
+      { value: 'env' as const, label: '环境配置', hint: 'aptool env setup-cn' },
+      { value: 'shell' as const, label: 'Shell 集成', hint: 'aptool shell install' },
+      { value: 'help' as const, label: '查看命令列表', hint: 'aptool list' },
+      { value: 'quit' as const, label: '退出' },
+    ];
+
     const choice = await p.select({
       message: '你要做什么？',
-      options: [
-        { value: 'dev', label: '开发调试', hint: 'Metro / Expo Go / Dev Build' },
-        { value: 'build', label: '构建安装包', hint: 'Android / iOS debug & release' },
-        { value: 'env', label: '环境配置', hint: 'aptool env setup-cn' },
-        { value: 'shell', label: 'Shell 集成', hint: 'aptool shell install' },
-        { value: 'help', label: '查看命令列表', hint: 'aptool list' },
-        { value: 'quit', label: '退出' },
-      ],
+      options,
     });
 
     if (p.isCancel(choice) || choice === 'quit') {
@@ -46,6 +53,14 @@ export async function runInteractive(ctx: ProjectContext): Promise<void> {
     }
 
     switch (choice) {
+      case 'repeat': {
+        const last = loadLastRun(ctx.root);
+        if (!last) break;
+        const { dispatchArgv } = await import('../dispatch.js');
+        await dispatchArgv(last.argv);
+        saveLastRun(ctx.root, last.argv, last.label);
+        break;
+      }
       case 'dev':
         printStatusBar(ctx, '首页 › 开发调试');
         await promptDevMenu(ctx);

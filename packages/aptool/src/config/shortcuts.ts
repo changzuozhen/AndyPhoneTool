@@ -4,6 +4,7 @@ export const shortcuts = {
   ai: 'dev run-ios',
   bbd: 'build android debug',
   bar: 'build android release',
+  rr: 'repeat',
 } as const;
 
 export type ShortcutKey = keyof typeof shortcuts;

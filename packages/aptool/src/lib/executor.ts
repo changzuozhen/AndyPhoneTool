@@ -1,14 +1,17 @@
 import { spawn } from 'node:child_process';
+import { existsSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 import { Listr } from 'listr2';
 
 import { loadEnvLocal } from './project.js';
+import { getMetroEnvForIosTarget } from './ios-devices.js';
 
 export type RunOptions = {
   cwd: string;
   env?: Record<string, string>;
   longTask?: boolean;
   taskTitle?: string;
-  steps?: Array<{ title: string; command: string; args?: string[]; cwd?: string }>;
+  steps?: Array<{ title: string; command: string; args?: string[]; cwd?: string; env?: Record<string, string> }>;
 };
 
 function mergeEnv(cwd: string, extra?: Record<string, string>): NodeJS.ProcessEnv {
@@ -53,6 +56,7 @@ export async function runWithSteps(options: RunOptions): Promise<void> {
       task: async () => {
         await runCommand(step.command, step.args ?? [], {
           cwd: step.cwd ?? cwd,
+          env: step.env,
         });
       },
     })),
@@ -80,7 +84,19 @@ export async function runExpo(
   args: string[],
   env?: Record<string, string>,
 ): Promise<void> {
-  await runCommand('npx', ['expo', ...args], { cwd, env });
+  const isSimulatorRun =
+    args.includes('run:ios') &&
+    !args.includes('--device') &&
+    !args.some((a, i) => args[i - 1] === '--device');
+
+  const metroEnv = args.includes('run:ios')
+    ? getMetroEnvForIosTarget(isSimulatorRun)
+    : {};
+
+  await runCommand('npx', ['expo', ...args], {
+    cwd,
+    env: { ...metroEnv, ...env },
+  });
 }
 
 /** 长任务：清屏 + 修改终端标题 + 执行 expo 命令 */

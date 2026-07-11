@@ -6,17 +6,30 @@ import type { ProjectContext } from '../lib/project.js';
 import {
   runWithSteps,
   runCommand,
-  runExpoLongTask,
   runNpmScriptLongTask,
 } from '../lib/executor.js';
 import { findProjectRoot } from '../lib/project.js';
 import {
   type IosTargetOptions,
+  type IosTargetResolution,
   listPhysicalIosDevices,
   resolveIosRunTarget,
   printIosTargetHint,
+  getMetroEnvForIosTarget,
   IOS_METRO_HINT,
 } from '../lib/ios-devices.js';
+import { saveLastRun } from '../lib/history.js';
+
+function printIosSigningHint(error: unknown): void {
+  const msg = error instanceof Error ? error.message : String(error);
+  if (!/code signing|signing certificates/i.test(msg)) return;
+  console.log(`
+⚠️  iOS 真机需要 Xcode 签名：
+   1. Xcode 打开 ios/*.xcworkspace → Signing & Capabilities → 选 Team
+   2. iPhone：设置 → 通用 → VPN与设备管理 → 信任开发者
+   3. 再运行 aptool ai 或 aptool rr
+`);
+}
 
 export async function devStart(): Promise<void> {
   const root = findProjectRoot();
@@ -46,6 +59,25 @@ export async function devRunAndroid(): Promise<void> {
   });
 }
 
+async function recordIosRun(
+  root: string,
+  command: 'dev run-ios' | 'build ios debug' | 'build ios release',
+  target: IosTargetResolution,
+  options?: IosTargetOptions,
+): Promise<void> {
+  const parts = command.split(' ');
+  const argv = [...parts];
+  if (options?.simulator) argv.push('--simulator');
+  else if (options?.device) argv.push('--device', options.device);
+  else {
+    const idx = target.expoArgs.indexOf('--device');
+    if (idx >= 0 && target.expoArgs[idx + 1]) {
+      argv.push('--device', target.expoArgs[idx + 1]!);
+    }
+  }
+  saveLastRun(root, argv, `aptool ${argv.join(' ')} → ${target.label}`);
+}
+
 export async function devRunIos(options?: IosTargetOptions): Promise<void> {
   const root = findProjectRoot();
   const target = resolveIosRunTarget(['run:ios'], options);
@@ -54,21 +86,29 @@ export async function devRunIos(options?: IosTargetOptions): Promise<void> {
   terminal.clear();
   terminal.setTitle(`⏳ aptool: iOS Dev Build → ${target.label}`);
   printIosTargetHint(target);
+  await recordIosRun(root, 'dev run-ios', target, options);
 
   try {
+    const metroEnv = getMetroEnvForIosTarget(target.isSimulator);
     await runWithSteps({
       cwd: root,
       longTask: false,
       taskTitle: 'iOS Dev Build',
       steps: [
         { title: '检查/生成 iOS 原生工程', command: 'npx', args: ['expo', 'prebuild', '--platform', 'ios'] },
-        { title: `构建并安装 → ${target.label}`, command: 'npx', args: ['expo', ...target.expoArgs] },
+        {
+          title: `构建并安装 → ${target.label}`,
+          command: 'npx',
+          args: ['expo', ...target.expoArgs],
+          env: metroEnv,
+        },
       ],
     });
     terminal.setTitle('✓ aptool: iOS Dev Build 完成');
     console.log(`\n${IOS_METRO_HINT}`);
   } catch (error) {
     terminal.setTitle('✗ aptool: iOS Dev Build 失败');
+    printIosSigningHint(error);
     throw error;
   }
 }
@@ -112,9 +152,35 @@ export async function buildIos(
     return;
   }
 
+  const { terminal } = await import('../lib/terminal.js');
+  terminal.clear();
+  terminal.setTitle(`⏳ aptool: iOS ${configuration} → ${target.label}`);
   printIosTargetHint(target);
-  await runExpoLongTask(root, target.expoArgs, `iOS ${configuration} → ${target.label}`);
-  console.log(`\n${IOS_METRO_HINT}`);
+  await recordIosRun(root, variant === 'debug' ? 'build ios debug' : 'build ios release', target, options);
+
+  try {
+    const metroEnv = getMetroEnvForIosTarget(target.isSimulator);
+    await runWithSteps({
+      cwd: root,
+      longTask: false,
+      taskTitle: `iOS ${configuration}`,
+      steps: [
+        { title: '检查/生成 iOS 原生工程', command: 'npx', args: ['expo', 'prebuild', '--platform', 'ios'] },
+        {
+          title: `构建并安装 → ${target.label}`,
+          command: 'npx',
+          args: ['expo', ...target.expoArgs],
+          env: metroEnv,
+        },
+      ],
+    });
+    terminal.setTitle(`✓ aptool: iOS ${configuration} 完成`);
+    console.log(`\n${IOS_METRO_HINT}`);
+  } catch (error) {
+    terminal.setTitle(`✗ aptool: iOS ${configuration} 失败`);
+    printIosSigningHint(error);
+    throw error;
+  }
 }
 
 export async function envSetupCn(): Promise<void> {
@@ -132,7 +198,7 @@ async function pickIosDeviceIfNeeded(options?: IosTargetOptions): Promise<IosTar
     message: '选择 iOS 安装目标',
     options: [
       ...devices.map((d) => ({
-        value: d.name,
+        value: d.udid,
         label: `${d.name}（${d.model}）`,
         hint: '真机',
       })),

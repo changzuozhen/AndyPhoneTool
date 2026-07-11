@@ -45,6 +45,7 @@ aptool adr
 | `env setup-cn` | 国内镜像配置 |
 | `shell install\|uninstall\|status` | zsh 集成 |
 | `help` / `list` | 帮助 |
+| `repeat` / `rr` | 重复上一次命令（含设备参数） |
 
 ## 项目内快捷码
 
@@ -55,6 +56,7 @@ aptool adr
 | `ai` | `dev run-ios` |
 | `bbd` | `build android debug` |
 | `bar` | `build android release` |
+| `rr` | `repeat` |
 
 快捷码由 CLI 内部展开，**不写入 zshrc**。
 
@@ -78,6 +80,13 @@ npm run aptool
 
 每步展示全局配置（项目路径、Node、native 目录、镜像源），菜单项附带等价完整命令。
 
+若存在上一次执行记录，首页会显示 **↻ 重复上一次**（等价 `aptool rr`）。记录保存在项目根 `.aptool/last-run.json`，iOS 命令会记住 `--device` UDID。
+
+```bash
+aptool rr              # 重复上一次完整命令
+aptool repeat          # 同上
+```
+
 ### iOS Dev Build 与真机
 
 `aptool dev run-ios` / `aptool ai` **默认优先安装到已连接的 iPhone**（通过 `xcrun devicectl` 检测）。
@@ -89,6 +98,18 @@ aptool dev run-ios --simulator        # 强制模拟器
 ```
 
 若红屏 **"No script URL"**：等待 Metro 日志出现 Bundled 后按 **⌘R** 重载 App，或重新运行命令。相机/闪光灯需真机。
+
+**模拟器**会自动使用 `127.0.0.1:8081`；**真机**使用 Mac 局域网 IP，请保持同一 Wi‑Fi。
+
+### iOS 真机签名（常见报错）
+
+若出现 `No code signing certificates are available`：
+
+1. 用 Xcode 打开 `ios/AndyPhoneTool.xcworkspace`（先执行一次 `npx expo prebuild --platform ios` 生成 `ios/`）
+2. 选中 Target → **Signing & Capabilities** → 勾选 **Automatically manage signing**
+3. 选择你的 **Team**（个人 Apple ID 即可免费开发签名）
+4. iPhone 上信任开发者证书：**设置 → 通用 → VPN与设备管理**
+5. 再运行 `aptool ai` 或 `aptool rr`
 
 ### 长任务体验
 

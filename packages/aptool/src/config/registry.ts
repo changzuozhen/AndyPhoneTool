@@ -80,7 +80,13 @@ export const commandRegistry: CommandMeta[] = [
     longTask: true,
   },
   {
-    id: 'env:setup-cn',
+    id: 'meta:repeat',
+    group: 'repeat',
+    action: '',
+    description: '重复执行上一次命令（参数与设备配置不变）',
+    examples: ['aptool repeat', 'aptool rr'],
+  },
+  {
     group: 'env',
     action: 'setup-cn',
     description: '配置国内 npm 镜像与环境变量',
