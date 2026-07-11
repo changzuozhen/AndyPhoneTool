@@ -3,6 +3,7 @@ import { Stack, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  AppState,
   Platform,
   Pressable,
   StyleSheet,
@@ -25,6 +26,7 @@ export default function NetSpeedToolScreen() {
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [state, setState] = useState<OverlayState>({
     supported: false,
     hasPermission: false,
@@ -60,8 +62,19 @@ export default function NetSpeedToolScreen() {
     };
   }, [refreshState]);
 
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        refreshState().catch(() => {});
+      }
+    });
+
+    return () => subscription.remove();
+  }, [refreshState]);
+
   const handleRequestPermission = async () => {
     setBusy(true);
+    setError(null);
     try {
       await NetSpeedOverlay.requestPermission();
       await refreshState();
@@ -72,6 +85,7 @@ export default function NetSpeedToolScreen() {
 
   const handleToggle = async () => {
     setBusy(true);
+    setError(null);
     try {
       if (state.running) {
         await NetSpeedOverlay.stop();
@@ -79,6 +93,8 @@ export default function NetSpeedToolScreen() {
         await NetSpeedOverlay.start();
       }
       await refreshState();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '操作失败，请稍后重试');
     } finally {
       setBusy(false);
     }
@@ -128,14 +144,14 @@ export default function NetSpeedToolScreen() {
         <Text style={styles.heroText}>
           {Platform.OS === 'ios'
             ? '开启后请切到后台，系统会以画中画小窗显示网速。'
-            : '开启后可在任意 App 上方看到悬浮网速条。'}
+            : '开启后可在任意 App 上方看到悬浮网速条，按住可拖动位置。'}
         </Text>
       </View>
 
       <View style={styles.card}>
         <StatusRow
           label="原生模块"
-          value={state.supported ? '已就绪（脚手架）' : '不可用'}
+          value={state.supported ? '已就绪' : '不可用'}
           ok={state.supported}
         />
         <StatusRow
@@ -145,7 +161,7 @@ export default function NetSpeedToolScreen() {
         />
         <StatusRow
           label="运行状态"
-          value={state.running ? '运行中（桩实现）' : '已停止'}
+          value={state.running ? '运行中' : '已停止'}
           ok={state.running}
         />
       </View>
@@ -174,8 +190,12 @@ export default function NetSpeedToolScreen() {
         </Text>
       </Pressable>
 
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
       <Text style={styles.note}>
-        当前为阶段 1 脚手架：原生接口已接通，悬浮窗渲染与网速采集将在后续阶段实现。
+        {Platform.OS === 'android'
+          ? 'Android 已支持系统悬浮窗与 TrafficStats 实时网速。iOS 画中画将在后续阶段实现。'
+          : 'iOS 画中画实现将在后续阶段完成。'}
       </Text>
     </View>
   );
@@ -323,6 +343,11 @@ const styles = StyleSheet.create({
   secondaryButtonText: {
     color: AppTheme.textSecondary,
     fontSize: 14,
+  },
+  errorText: {
+    color: '#FF8A8A',
+    fontSize: 13,
+    lineHeight: 18,
   },
   note: {
     color: AppTheme.textSecondary,

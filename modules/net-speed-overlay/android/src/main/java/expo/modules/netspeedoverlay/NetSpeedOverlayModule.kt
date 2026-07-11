@@ -4,12 +4,11 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import expo.modules.kotlin.exception.CodedException
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 
 class NetSpeedOverlayModule : Module() {
-  private var running = false
-
   override fun definition() = ModuleDefinition {
     Name("NetSpeedOverlay")
 
@@ -41,15 +40,32 @@ class NetSpeedOverlayModule : Module() {
     }
 
     AsyncFunction("start") {
-      running = true
+      val context = appContext.reactContext
+        ?: throw CodedException("E_NO_CONTEXT", "React context is unavailable")
+
+      if (!canDrawOverlays()) {
+        throw CodedException("E_NO_PERMISSION", "Overlay permission is not granted")
+      }
+
+      if (NetSpeedService.isActive) {
+        return@AsyncFunction
+      }
+
+      val intent = Intent(context, NetSpeedService::class.java)
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        context.startForegroundService(intent)
+      } else {
+        context.startService(intent)
+      }
     }
 
     AsyncFunction("stop") {
-      running = false
+      val context = appContext.reactContext ?: return@AsyncFunction
+      context.stopService(Intent(context, NetSpeedService::class.java))
     }
 
     AsyncFunction("isRunning") {
-      running
+      NetSpeedService.isActive
     }
   }
 
