@@ -53,8 +53,8 @@ final class NetSpeedMonitor {
 
       if name == "en0" || name.hasPrefix("pdp_ip"), interface.ifa_data != nil {
         let data = interface.ifa_data!.assumingMemoryBound(to: if_data.self).pointee
-        rxBytes &+= UInt64(data.ibi_bytes)
-        txBytes &+= UInt64(data.obi_bytes)
+        rxBytes &+= UInt64(data.ifi_ibytes)
+        txBytes &+= UInt64(data.ifi_obytes)
       }
 
       pointer = interface.ifa_next

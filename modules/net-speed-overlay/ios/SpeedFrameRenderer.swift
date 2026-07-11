@@ -106,8 +106,17 @@ final class SpeedFrameRenderer {
     let upload = NSAttributedString(string: uploadText, attributes: uploadAttributes)
 
     let downloadSize = download.size()
-    download.draw(in: CGRect(x: 12, y: 18, width: downloadSize.width, height: 20))
-    upload.draw(in: CGRect(x: 12 + downloadSize.width + 8, y: 18, width: width - 32, height: 20))
+    let padding: CGFloat = 12
+    let gap: CGFloat = 8
+    download.draw(in: CGRect(x: padding, y: 18, width: downloadSize.width, height: 20))
+    upload.draw(
+      in: CGRect(
+        x: padding + downloadSize.width + gap,
+        y: 18,
+        width: CGFloat(width) - padding * 2,
+        height: 20
+      )
+    )
 
     return pixelBuffer
   }
