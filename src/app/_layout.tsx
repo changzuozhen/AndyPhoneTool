@@ -56,6 +56,7 @@ export default function RootLayout() {
             name="tools/camera-flash"
             options={{ headerShown: false, presentation: 'fullScreenModal' }}
           />
+          <Stack.Screen name="tools/device-info" options={{ headerShown: false }} />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

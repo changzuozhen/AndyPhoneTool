@@ -2,8 +2,8 @@ export type ToolDefinition = {
   id: string;
   title: string;
   description: string;
-  icon: 'flashlight' | 'construct';
-  route: '/tools/camera-flash';
+  icon: 'flashlight' | 'hardware-chip' | 'construct';
+  route: '/tools/camera-flash' | '/tools/device-info';
   available: boolean;
 };
 
@@ -14,6 +14,14 @@ export const TOOLS: ToolDefinition[] = [
     description: '进入即开闪光灯，支持亮度调节、自动对焦与双指缩放',
     icon: 'flashlight',
     route: '/tools/camera-flash',
+    available: true,
+  },
+  {
+    id: 'device-info',
+    title: '设备信息中心',
+    description: '查看设备参数、电量、网络与实时传感器数据',
+    icon: 'hardware-chip',
+    route: '/tools/device-info',
     available: true,
   },
   {

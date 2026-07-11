@@ -9,8 +9,14 @@ type ToolCardProps = {
   tool: ToolDefinition;
 };
 
+const ICON_MAP = {
+  flashlight: 'flashlight',
+  'hardware-chip': 'hardware-chip-outline',
+  construct: 'construct-outline',
+} as const;
+
 export function ToolCard({ tool }: ToolCardProps) {
-  const iconName = tool.icon === 'flashlight' ? 'flashlight' : 'construct-outline';
+  const iconName = ICON_MAP[tool.icon];
 
   if (!tool.available) {
     return (
