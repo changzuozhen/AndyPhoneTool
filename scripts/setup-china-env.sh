@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# AndyPhoneTool 国内开发环境一键配置
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+REGISTRY="https://registry.npmmirror.com"
+NPMRC="$ROOT/.npmrc"
+
+echo "==> AndyPhoneTool 国内基建配置"
+echo "    项目目录: $ROOT"
+echo ""
+
+# 1. 确认 .npmrc 已指向国内镜像
+if [[ -f "$NPMRC" ]] && grep -q "registry.npmmirror.com" "$NPMRC"; then
+  echo "[ok] .npmrc 已配置 npmmirror 镜像"
+else
+  echo "[!!] 未找到 .npmrc 国内镜像配置，请检查仓库文件"
+  exit 1
+fi
+
+# 2. 写入用户级 npm 镜像
+if command -v npm >/dev/null 2>&1; then
+  npm config set registry "$REGISTRY"
+  echo "[ok] npm 用户级 registry -> $REGISTRY"
+fi
+
+# 3. 推荐环境变量写入 .env.local（不覆盖已有文件）
+ENV_LOCAL="$ROOT/.env.local"
+if [[ ! -f "$ENV_LOCAL" ]]; then
+  cat > "$ENV_LOCAL" <<'EOF'
+EXPO_NO_TELEMETRY=1
+EXPO_USE_METRO_WORKSPACE_ROOT=1
+NPM_CONFIG_REGISTRY=https://registry.npmmirror.com
+npm_config_disturl=https://npmmirror.com/mirrors/node
+npm_config_electron_mirror=https://npmmirror.com/mirrors/electron/
+npm_config_sharp_binary_host=https://npmmirror.com/mirrors/sharp
+npm_config_sharp_libvips_binary_host=https://npmmirror.com/mirrors/sharp-libvips
+EOF
+  echo "[ok] 已创建 .env.local（含二进制包镜像环境变量）"
+else
+  echo "[--] .env.local 已存在，跳过"
+fi
+
+# 4. 检查 Node 版本
+if command -v node >/dev/null 2>&1; then
+  NODE_MAJOR="$(node -p "process.versions.node.split('.')[0]")"
+  if [[ "$NODE_MAJOR" -lt 20 ]]; then
+    echo "[!!] 建议 Node >= 20（当前: $(node -v)）。可用 nvm: nvm install && nvm use"
+  else
+    echo "[ok] Node 版本: $(node -v)"
+  fi
+fi
+
+# 5. 连通性探测
+echo ""
+echo "==> 镜像连通性检测"
+if npm view expo version --registry="$REGISTRY" >/dev/null 2>&1; then
+  echo "[ok] npmmirror 可解析 expo 包"
+else
+  echo "[!!] npmmirror 访问失败，请检查网络或代理"
+  exit 1
+fi
+
+echo ""
+echo "==> 下一步"
+echo "    npm install          # 使用 .npmrc 国内镜像安装依赖"
+echo "    npm run start:cn     # 启动 Expo 开发服务"
+echo ""
+echo "    完整说明见 docs/development-china.md"
