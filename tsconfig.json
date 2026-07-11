@@ -5,12 +5,16 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "net-speed-overlay": [
+        "./modules/net-speed-overlay/index.ts"
       ]
     }
   },
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
+    "modules/**/*.ts",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
   ],

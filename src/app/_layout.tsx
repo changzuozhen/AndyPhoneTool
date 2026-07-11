@@ -57,6 +57,7 @@ export default function RootLayout() {
             options={{ headerShown: false, presentation: 'fullScreenModal' }}
           />
           <Stack.Screen name="tools/device-info" options={{ headerShown: false }} />
+          <Stack.Screen name="tools/net-speed" options={{ headerShown: false }} />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

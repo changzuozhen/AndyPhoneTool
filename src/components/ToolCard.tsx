@@ -12,6 +12,7 @@ type ToolCardProps = {
 const ICON_MAP = {
   flashlight: 'flashlight',
   'hardware-chip': 'hardware-chip-outline',
+  speedometer: 'speedometer-outline',
   construct: 'construct-outline',
 } as const;
 

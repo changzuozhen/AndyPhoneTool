@@ -1,0 +1,9 @@
+{
+  "platforms": ["android", "apple"],
+  "apple": {
+    "modules": ["NetSpeedOverlayModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.netspeedoverlay.NetSpeedOverlayModule"]
+  }
+}
