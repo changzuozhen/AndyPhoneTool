@@ -1,0 +1,158 @@
+diff --git a/node_modules/expo-camera/android/src/main/java/expo/modules/camera/CameraViewModule.kt b/node_modules/expo-camera/android/src/main/java/expo/modules/camera/CameraViewModule.kt
+index 21382f8..787fb44 100644
+--- a/node_modules/expo-camera/android/src/main/java/expo/modules/camera/CameraViewModule.kt
++++ b/node_modules/expo-camera/android/src/main/java/expo/modules/camera/CameraViewModule.kt
+@@ -290,6 +290,13 @@ class CameraViewModule : Module() {
+         }
+       }
+ 
++      Prop("torchLevel") { view, level: Double? ->
++        val next = level?.toFloat() ?: 1f
++        if (view.torchLevel != next) {
++          view.torchLevel = next
++        }
++      }
++
+       Prop("animateShutter") { view, animate: Boolean? ->
+         view.animateShutter = animate ?: true
+       }
+diff --git a/node_modules/expo-camera/android/src/main/java/expo/modules/camera/ExpoCameraView.kt b/node_modules/expo-camera/android/src/main/java/expo/modules/camera/ExpoCameraView.kt
+index d9690e3..bdf518d 100644
+--- a/node_modules/expo-camera/android/src/main/java/expo/modules/camera/ExpoCameraView.kt
++++ b/node_modules/expo-camera/android/src/main/java/expo/modules/camera/ExpoCameraView.kt
+@@ -212,8 +212,12 @@ class ExpoCameraView(
+ 
+   var mute: Boolean = false
+   var animateShutter: Boolean = true
+-  var enableTorch: Boolean by Delegates.observable(false) { _, _, newValue ->
+-    setTorchEnabled(newValue)
++  var enableTorch: Boolean by Delegates.observable(false) { _, _, _ ->
++    applyTorch()
++  }
++
++  var torchLevel: Float by Delegates.observable(1f) { _, _, _ ->
++    applyTorch()
+   }
+ 
+   private var lastWidth = 0
+@@ -340,10 +344,31 @@ class ExpoCameraView(
+     imageCaptureUseCase?.flashMode = currentMode.mapToLens()
+   }
+ 
+-  private fun setTorchEnabled(enabled: Boolean) {
+-    if (camera?.cameraInfo?.hasFlashUnit() == true) {
+-      camera?.cameraControl?.enableTorch(enabled)
++  private fun applyTorch() {
++    val cam = camera ?: return
++    if (cam.cameraInfo.hasFlashUnit() != true) {
++      return
++    }
++
++    val control = cam.cameraControl
++    if (!enableTorch) {
++      control.enableTorch(false)
++      return
+     }
++
++    val info = cam.cameraInfo
++    if (info.isTorchStrengthSupported) {
++      val max = info.maxTorchStrengthLevel
++      val strength = (torchLevel.coerceIn(0.05f, 1f) * max).toInt().coerceIn(1, max)
++      control.enableTorch(true)
++      control.setTorchStrengthLevel(strength)
++    } else {
++      control.enableTorch(true)
++    }
++  }
++
++  private fun setTorchEnabled(enabled: Boolean) {
++    applyTorch()
+   }
+ 
+   fun record(options: RecordingOptions, promise: Promise, cacheDirectory: File) {
+diff --git a/node_modules/expo-camera/ios/CameraViewModule.swift b/node_modules/expo-camera/ios/CameraViewModule.swift
+index cccd73f..e1b4ee7 100644
+--- a/node_modules/expo-camera/ios/CameraViewModule.swift
++++ b/node_modules/expo-camera/ios/CameraViewModule.swift
+@@ -116,6 +116,13 @@ public final class CameraViewModule: Module, ScannerResultHandler {
+         }
+       }
+ 
++      Prop("torchLevel") { (view, level: Double?) in
++        let next = Float(level ?? 1.0)
++        if view.torchLevel != next {
++          view.torchLevel = next
++        }
++      }
++
+       Prop("pictureSize") { (view, pictureSize: PictureSize?) in
+         if let pictureSize, view.pictureSize != pictureSize {
+           view.pictureSize = pictureSize
+diff --git a/node_modules/expo-camera/ios/Current/CameraSessionManager.swift b/node_modules/expo-camera/ios/Current/CameraSessionManager.swift
+index 2b68d31..45b25a9 100644
+--- a/node_modules/expo-camera/ios/Current/CameraSessionManager.swift
++++ b/node_modules/expo-camera/ios/Current/CameraSessionManager.swift
+@@ -12,6 +12,7 @@ protocol CameraSessionManagerDelegate: AnyObject {
+   var presetCamera: AVCaptureDevice.Position { get }
+   var selectedLens: String? { get }
+   var torchEnabled: Bool { get }
++  var torchLevel: Float { get }
+   var autoFocus: AVCaptureDevice.FocusMode { get }
+   var zoom: CGFloat { get }
+   var onMountError: EventDispatcher { get }
+@@ -185,8 +186,16 @@ class CameraSessionManager: NSObject, DeviceDiscoveryDelegate {
+     do {
+       try device.lockForConfiguration()
+       defer { device.unlockForConfiguration() }
+-      if device.isTorchModeSupported(.on) {
+-        device.torchMode = delegate.torchEnabled ? .on : .off
++      if delegate.torchEnabled {
++        let level = max(0.0, min(1.0, delegate.torchLevel))
++        if level >= 0.01, device.isTorchModeSupported(.on) {
++          let clamped = min(level, AVCaptureDevice.maxAvailableTorchLevel)
++          try device.setTorchModeOn(level: clamped)
++        } else if device.isTorchModeSupported(.off) {
++          device.torchMode = .off
++        }
++      } else if device.isTorchModeSupported(.off) {
++        device.torchMode = .off
+       }
+     } catch {
+       log.info("\(#function): \(error.localizedDescription)")
+diff --git a/node_modules/expo-camera/ios/Current/CameraView.swift b/node_modules/expo-camera/ios/Current/CameraView.swift
+index 7bf1b37..c7eb32d 100644
+--- a/node_modules/expo-camera/ios/Current/CameraView.swift
++++ b/node_modules/expo-camera/ios/Current/CameraView.swift
+@@ -90,6 +90,14 @@ public class CameraView: ExpoView, EXAppLifecycleListener, EXCameraInterface, Ca
+     }
+   }
+ 
++  var torchLevel: Float = 1.0 {
++    didSet {
++      sessionQueue.async {
++        self.sessionManager.enableTorch()
++      }
++    }
++  }
++
+   var autoFocus = AVCaptureDevice.FocusMode.continuousAutoFocus {
+     didSet {
+       sessionQueue.async {
+diff --git a/node_modules/expo-camera/src/Camera.types.ts b/node_modules/expo-camera/src/Camera.types.ts
+index 7cf0a07..03cb327 100644
+--- a/node_modules/expo-camera/src/Camera.types.ts
++++ b/node_modules/expo-camera/src/Camera.types.ts
+@@ -425,6 +425,13 @@ export type CameraViewProps = ViewProps & {
+    * @default false
+    */
+   enableTorch?: boolean;
++  /**
++   * Torch brightness from 0 to 1. Only applies when `enableTorch` is true.
++   * @default 1
++   * @platform android
++   * @platform ios
++   */
++  torchLevel?: number;
+   /**
+    * The video stabilization mode used for a video recording. Use one of [`VideoStabilization.<value>`](#videostabilization).
+    * You can read more about each stabilization type in [Apple Documentation](https://developer.apple.com/documentation/avfoundation/avcapturevideostabilizationmode).

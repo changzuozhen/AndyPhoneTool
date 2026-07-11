@@ -29,9 +29,11 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "patch-package": "^8.0.1",
     "typescript": "~6.0.3"
   },
   "scripts": {
+    "postinstall": "patch-package",
     "setup": "bash scripts/setup.sh",
     "setup:cn": "bash scripts/setup-china-env.sh",
     "aptool": "node packages/aptool/dist/index.js",

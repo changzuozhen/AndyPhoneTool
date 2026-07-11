@@ -1,10 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Stack, useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -26,6 +25,8 @@ export default function CameraFlashToolScreen() {
   const [permission, requestPermission] = useCameraPermissions();
   const [brightness, setBrightness] = useState(DEFAULT_BRIGHTNESS);
   const [zoom, setZoom] = useState(0);
+  const [cameraReady, setCameraReady] = useState(false);
+  const [torchActive, setTorchActive] = useState(false);
   const baseZoom = useRef(0);
 
   useEffect(() => {
@@ -47,6 +48,23 @@ export default function CameraFlashToolScreen() {
     });
 
   const torchEnabled = brightness >= MIN_TORCH_BRIGHTNESS;
+
+  const handleCameraReady = useCallback(() => {
+    setCameraReady(true);
+  }, []);
+
+  // expo-camera 首次渲染时 enableTorch 可能不生效，相机就绪后延迟开启一次
+  useEffect(() => {
+    if (!cameraReady) return;
+    setTorchActive(torchEnabled);
+  }, [cameraReady, torchEnabled]);
+
+  useEffect(() => {
+    if (!cameraReady || !torchEnabled) return;
+    setTorchActive(false);
+    const timer = setTimeout(() => setTorchActive(true), 80);
+    return () => clearTimeout(timer);
+  }, [cameraReady]);
 
   if (!permission) {
     return (
@@ -84,8 +102,10 @@ export default function CameraFlashToolScreen() {
             style={StyleSheet.absoluteFill}
             facing="back"
             autofocus="off"
-            enableTorch={torchEnabled}
+            enableTorch={torchActive}
+            torchLevel={brightness}
             zoom={zoom}
+            onCameraReady={handleCameraReady}
           />
 
           <View style={[styles.focusRing, styles.focusRingCenter]} pointerEvents="none">
@@ -114,11 +134,9 @@ export default function CameraFlashToolScreen() {
               <Text style={styles.hintText}>双指捏合缩放 · 系统自动对焦</Text>
             </View>
             <BrightnessSlider value={brightness} onValueChange={setBrightness} />
-            {Platform.OS === 'ios' && (
-              <Text style={styles.platformNote}>
-                iOS 系统手电筒为开关模式，亮度滑杆在低端设备上映射为开/关阈值。
-              </Text>
-            )}
+            <Text style={styles.platformNote}>
+              亮度通过原生 torch 级别调节；低于 5% 关闭闪光灯。修改后需重新 Dev Build 安装。
+            </Text>
           </View>
         </View>
       </GestureDetector>
