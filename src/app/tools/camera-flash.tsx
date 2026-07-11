@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BrightnessSlider } from '@/components/BrightnessSlider';
 import { PrimaryButton } from '@/components/PrimaryButton';
+import { ScreenHeader } from '@/components/ScreenHeader';
 import { AppTheme } from '@/constants/theme';
 
 const DEFAULT_BRIGHTNESS = 0.75;
@@ -116,17 +117,17 @@ export default function CameraFlashToolScreen() {
             <View style={styles.focusCornerBR} />
           </View>
 
-          <View style={[styles.topBar, { paddingTop: insets.top + 8 }]} pointerEvents="box-none">
-            <Pressable
-              style={styles.iconButton}
-              onPress={() => router.back()}
-              hitSlop={8}>
-              <Ionicons name="chevron-back" size={24} color="#fff" />
-            </Pressable>
-            <Text style={styles.topTitle}>手电筒相机</Text>
-            <View style={styles.zoomBadge}>
-              <Text style={styles.zoomText}>{Math.round(zoom * 100)}%</Text>
-            </View>
+          <View style={styles.topBar} pointerEvents="box-none">
+            <ScreenHeader
+              title="手电筒相机"
+              onBack={() => router.back()}
+              variant="overlay"
+              rightSlot={
+                <View style={styles.zoomBadge}>
+                  <Text style={styles.zoomText}>{Math.round(zoom * 100)}%</Text>
+                </View>
+              }
+            />
           </View>
 
           <View style={[styles.bottomPanel, { paddingBottom: insets.bottom + 16 }]}>
@@ -245,24 +246,6 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    gap: 8,
-  },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: AppTheme.overlayButton,
-  },
-  topTitle: {
-    flex: 1,
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: '600',
   },
   zoomBadge: {
     paddingHorizontal: 10,

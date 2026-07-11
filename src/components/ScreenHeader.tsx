@@ -63,6 +63,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   titleOverlay: {
+    flex: 1,
     color: '#fff',
     fontWeight: '600',
   },

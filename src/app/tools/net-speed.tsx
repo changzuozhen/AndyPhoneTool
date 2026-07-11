@@ -12,13 +12,14 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { HeroBlock } from '@/components/HeroBlock';
 import { PrimaryButton } from '@/components/PrimaryButton';
 import { ScreenHeader } from '@/components/ScreenHeader';
 import { StatusRow } from '@/components/StatusRow';
 import { AppLayout, AppTheme } from '@/constants/theme';
 import {
   ensureAndroidNotificationPermission,
-  getPermissionGuide,
+  getHeroDescription,
   getPlatformHint,
   mapOverlayError,
   openAppSettings,
@@ -173,24 +174,13 @@ export default function NetSpeedToolScreen() {
       <ScreenHeader title="网速悬浮窗" onBack={() => router.back()} />
 
       <View style={styles.body}>
-        <View style={styles.hero}>
-          <View style={styles.heroIconWrap}>
+        <HeroBlock
+          icon={
             <Ionicons name="speedometer-outline" size={36} color={AppTheme.accentWarm} />
-          </View>
-          <Text style={styles.heroTitle}>实时网速 · 盖在其他 App 上</Text>
-          <Text style={styles.heroText}>
-            {Platform.OS === 'ios'
-              ? '开启后系统会启动画中画小窗；切到桌面或其他 App 即可看到实时网速。'
-              : '开启后可在任意 App 上方看到悬浮网速条，按住可拖动位置。'}
-          </Text>
-        </View>
-
-        {state.running ? (
-          <View style={styles.bannerSuccess}>
-            <Ionicons name="checkmark-circle" size={18} color={AppTheme.success} />
-            <Text style={styles.bannerText}>{getPlatformHint(true)}</Text>
-          </View>
-        ) : null}
+          }
+          title="实时网速 · 盖在其他 App 上"
+          description={getHeroDescription()}
+        />
 
         <View style={styles.card}>
           <StatusRow
@@ -211,18 +201,11 @@ export default function NetSpeedToolScreen() {
         </View>
 
         {!state.hasPermission ? (
-          <View style={styles.guideCard}>
-            <Text style={styles.guideTitle}>需要权限</Text>
-            <Text style={styles.guideText}>{getPermissionGuide()}</Text>
-          </View>
-        ) : null}
-
-        {!state.hasPermission ? (
           <PrimaryButton
             label={
               Platform.OS === 'android'
                 ? '前往授权「显示在其他应用上层」'
-                : '确认画中画可用性'
+                : '检查画中画可用性'
             }
             onPress={handleRequestPermission}
             disabled={busy}
@@ -250,7 +233,7 @@ export default function NetSpeedToolScreen() {
 
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-        {!state.running ? <Text style={styles.note}>{getPlatformHint(false)}</Text> : null}
+        <Text style={styles.note}>{getPlatformHint()}</Text>
       </View>
     </View>
   );
@@ -275,46 +258,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
     backgroundColor: AppTheme.background,
   },
-  hero: {
-    gap: 10,
-    paddingVertical: 8,
-  },
-  heroIconWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: AppTheme.surface,
-    borderWidth: 1,
-    borderColor: AppTheme.border,
-  },
-  heroTitle: {
-    color: AppTheme.textPrimary,
-    fontSize: 22,
-    fontWeight: '800',
-  },
-  heroText: {
-    color: AppTheme.textSecondary,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  bannerSuccess: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-    padding: 12,
-    borderRadius: AppLayout.cardRadius,
-    backgroundColor: 'rgba(74, 222, 128, 0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(74, 222, 128, 0.25)',
-  },
-  bannerText: {
-    flex: 1,
-    color: AppTheme.textPrimary,
-    fontSize: 13,
-    lineHeight: 18,
-  },
   card: {
     gap: 12,
     padding: 16,
@@ -322,24 +265,6 @@ const styles = StyleSheet.create({
     backgroundColor: AppTheme.surface,
     borderWidth: 1,
     borderColor: AppTheme.border,
-  },
-  guideCard: {
-    gap: 6,
-    padding: 14,
-    borderRadius: AppLayout.cardRadius,
-    backgroundColor: AppTheme.surfaceElevated,
-    borderWidth: 1,
-    borderColor: AppTheme.border,
-  },
-  guideTitle: {
-    color: AppTheme.textPrimary,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  guideText: {
-    color: AppTheme.textSecondary,
-    fontSize: 13,
-    lineHeight: 18,
   },
   linkButton: {
     alignSelf: 'center',

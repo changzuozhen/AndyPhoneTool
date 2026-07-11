@@ -2,7 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ToolCard } from '@/components/ToolCard';
-import { AppTheme } from '@/constants/theme';
+import { AppLayout, AppTheme } from '@/constants/theme';
 import { TOOLS } from '@/constants/tools';
 
 export default function HomeScreen() {
@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: AppTheme.background,
-    paddingHorizontal: 20,
+    paddingHorizontal: AppLayout.screenPaddingX,
     paddingBottom: 24,
   },
   header: {

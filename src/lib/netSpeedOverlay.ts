@@ -54,22 +54,18 @@ export function openAppSettings(): void {
   Linking.openSettings().catch(() => {});
 }
 
-export function getPlatformHint(running: boolean): string {
+export function getPlatformHint(): string {
   if (Platform.OS === 'ios') {
-    return running
-      ? '画中画已启动。切到桌面或其他 App 即可查看网速小窗。'
-      : 'iOS 使用画中画显示网速；开启后请切到后台查看。窗口位置与大小由系统管理。';
+    return 'iOS 画中画实现将在后续阶段完成。';
   }
 
-  return running
-    ? '悬浮窗运行中。可切到其他 App 验证，按住浮窗可拖动位置；也可从通知栏停止。'
-    : 'Android 使用系统悬浮窗显示全局网速（含其他 App 流量）。';
+  return 'Android 已支持系统悬浮窗与 TrafficStats 实时网速。iOS 画中画将在后续阶段实现。';
 }
 
-export function getPermissionGuide(): string {
-  if (Platform.OS === 'android') {
-    return '请在系统设置中为 AndyPhoneTool 开启「显示在其他应用上层」，返回 App 后状态会自动刷新。';
+export function getHeroDescription(): string {
+  if (Platform.OS === 'ios') {
+    return '开启后请切到后台，系统会以画中画小窗显示网速。';
   }
 
-  return '请确认设备支持画中画（iPhone/iPad，系统 iOS 15+）。不支持时此工具无法使用。';
+  return '开启后可在任意 App 上方看到悬浮网速条，按住可拖动位置。';
 }

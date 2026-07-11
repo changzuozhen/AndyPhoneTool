@@ -13,6 +13,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ScreenHeader } from '@/components/ScreenHeader';
+import { SectionHeader } from '@/components/SectionHeader';
 import { AppLayout, AppTheme } from '@/constants/theme';
 
 type Vector = { x: number; y: number; z: number };
@@ -176,10 +177,7 @@ export default function DeviceInfoScreen() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <View style={styles.section}>
-      <View style={styles.sectionHeader}>
-        <View style={styles.sectionBar} />
-        <Text style={styles.sectionTitle}>{title}</Text>
-      </View>
+      <SectionHeader title={title} />
       {children}
     </View>
   );
@@ -233,24 +231,6 @@ const styles = StyleSheet.create({
   },
   section: {
     gap: 10,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  sectionBar: {
-    width: 3,
-    height: 14,
-    borderRadius: 2,
-    backgroundColor: AppTheme.accent,
-  },
-  sectionTitle: {
-    color: AppTheme.textSecondary,
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
   },
   card: {
     backgroundColor: AppTheme.surface,
