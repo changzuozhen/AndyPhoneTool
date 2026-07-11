@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import {
   BatteryState,
   useBatteryLevel,
@@ -10,10 +9,11 @@ import { getIpAddressAsync, useNetworkState } from 'expo-network';
 import { Stack, useRouter } from 'expo-router';
 import { Accelerometer, Gyroscope, Magnetometer } from 'expo-sensors';
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AppTheme } from '@/constants/theme';
+import { ScreenHeader } from '@/components/ScreenHeader';
+import { AppLayout, AppTheme } from '@/constants/theme';
 
 type Vector = { x: number; y: number; z: number };
 
@@ -103,17 +103,13 @@ export default function DeviceInfoScreen() {
   return (
     <View style={styles.root}>
       <Stack.Screen options={{ headerShown: false }} />
-
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <Pressable style={styles.backButton} onPress={() => router.back()} hitSlop={8}>
-          <Ionicons name="chevron-back" size={24} color={AppTheme.textPrimary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>设备信息中心</Text>
-        <View style={styles.backButton} />
-      </View>
+      <ScreenHeader title="设备信息中心" onBack={() => router.back()} />
 
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 32 }]}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: insets.bottom + 32 },
+        ]}
         showsVerticalScrollIndicator={false}>
         <Section title="设备参数">
           <View style={styles.card}>
@@ -167,9 +163,9 @@ export default function DeviceInfoScreen() {
 
         <Section title="传感器 · 实时">
           <View style={styles.sensorRow}>
-            <SensorCard icon="speedometer-outline" title="加速度计" data={accel} />
-            <SensorCard icon="sync-outline" title="陀螺仪" data={gyro} />
-            <SensorCard icon="magnet-outline" title="磁力计" data={magnet} />
+            <SensorCard title="加速度计" data={accel} />
+            <SensorCard title="陀螺仪" data={gyro} />
+            <SensorCard title="磁力计" data={magnet} />
           </View>
         </Section>
       </ScrollView>
@@ -209,26 +205,18 @@ function InfoRow({
 }
 
 function SensorCard({
-  icon,
   title,
   data,
 }: {
-  icon: React.ComponentProps<typeof Ionicons>['name'];
   title: string;
   data: Vector;
 }) {
   return (
     <View style={styles.sensorCard}>
-      <View style={styles.sensorHeader}>
-        <Ionicons name={icon} size={16} color={AppTheme.accent} />
-        <Text style={styles.sensorTitle}>{title}</Text>
-      </View>
-      {(['x', 'y', 'z'] as const).map((axis) => (
-        <View key={axis} style={styles.sensorAxisRow}>
-          <Text style={styles.sensorAxisLabel}>{axis.toUpperCase()}</Text>
-          <Text style={styles.sensorAxisValue}>{data[axis].toFixed(2)}</Text>
-        </View>
-      ))}
+      <Text style={styles.sensorTitle}>{title}</Text>
+      <Text style={styles.sensorData}>
+        x:{data.x.toFixed(2)} y:{data.y.toFixed(2)} z:{data.z.toFixed(2)}
+      </Text>
     </View>
   );
 }
@@ -238,34 +226,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: AppTheme.background,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    gap: 8,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: AppTheme.surface,
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    color: AppTheme.textPrimary,
-    fontSize: 18,
-    fontWeight: '700',
-  },
   content: {
-    paddingHorizontal: 20,
-    gap: 22,
+    paddingTop: 8,
+    paddingHorizontal: AppLayout.screenPaddingX,
+    gap: AppLayout.sectionGap,
   },
   section: {
-    gap: 12,
+    gap: 10,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -282,41 +249,43 @@ const styles = StyleSheet.create({
     color: AppTheme.textSecondary,
     fontSize: 13,
     fontWeight: '700',
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
   },
   card: {
     backgroundColor: AppTheme.surface,
-    borderRadius: 16,
+    borderRadius: AppLayout.cardRadius,
     borderWidth: 1,
     borderColor: AppTheme.border,
-    paddingHorizontal: 16,
+    overflow: 'hidden',
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 13,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     gap: 12,
   },
   infoRowBorder: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
     borderBottomColor: AppTheme.border,
   },
   infoLabel: {
     color: AppTheme.textSecondary,
     fontSize: 14,
-    fontFamily: 'SpaceMono',
   },
   infoValue: {
     flexShrink: 1,
     color: AppTheme.textPrimary,
     fontSize: 14,
-    fontFamily: 'SpaceMono',
+    fontWeight: '600',
     textAlign: 'right',
   },
   batteryBarTrack: {
     height: 30,
     marginVertical: 14,
+    marginHorizontal: 16,
     borderRadius: 8,
     backgroundColor: AppTheme.surfaceElevated,
     overflow: 'hidden',
@@ -335,7 +304,6 @@ const styles = StyleSheet.create({
     color: AppTheme.textPrimary,
     fontSize: 14,
     fontWeight: '700',
-    fontFamily: 'SpaceMono',
   },
   sensorRow: {
     flexDirection: 'row',
@@ -344,35 +312,20 @@ const styles = StyleSheet.create({
   sensorCard: {
     flex: 1,
     backgroundColor: AppTheme.surface,
-    borderRadius: 14,
+    borderRadius: AppLayout.cardRadius,
     borderWidth: 1,
     borderColor: AppTheme.border,
-    padding: 12,
+    padding: 14,
     gap: 8,
-  },
-  sensorHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
   },
   sensorTitle: {
     color: AppTheme.textPrimary,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
   },
-  sensorAxisRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  sensorAxisLabel: {
-    color: AppTheme.accent,
-    fontSize: 12,
-    fontFamily: 'SpaceMono',
-  },
-  sensorAxisValue: {
-    color: AppTheme.textPrimary,
-    fontSize: 12,
-    fontFamily: 'SpaceMono',
+  sensorData: {
+    color: AppTheme.textSecondary,
+    fontSize: 11,
+    lineHeight: 16,
   },
 });

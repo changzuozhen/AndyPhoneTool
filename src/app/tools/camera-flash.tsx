@@ -14,6 +14,7 @@ import { runOnJS } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BrightnessSlider } from '@/components/BrightnessSlider';
+import { PrimaryButton } from '@/components/PrimaryButton';
 import { AppTheme } from '@/constants/theme';
 
 const DEFAULT_BRIGHTNESS = 0.75;
@@ -83,9 +84,9 @@ export default function CameraFlashToolScreen() {
         <Text style={styles.permissionText}>
           手电筒相机需要访问后置摄像头与闪光灯，用于照明与预览。
         </Text>
-        <Pressable style={styles.primaryButton} onPress={requestPermission}>
-          <Text style={styles.primaryButtonText}>授权相机</Text>
-        </Pressable>
+        <View style={styles.permissionButton}>
+          <PrimaryButton label="授权相机" onPress={requestPermission} />
+        </View>
         <Pressable style={styles.secondaryButton} onPress={() => router.back()}>
           <Text style={styles.secondaryButtonText}>返回</Text>
         </Pressable>
@@ -116,7 +117,10 @@ export default function CameraFlashToolScreen() {
           </View>
 
           <View style={[styles.topBar, { paddingTop: insets.top + 8 }]} pointerEvents="box-none">
-            <Pressable style={styles.iconButton} onPress={() => router.back()}>
+            <Pressable
+              style={styles.iconButton}
+              onPress={() => router.back()}
+              hitSlop={8}>
               <Ionicons name="chevron-back" size={24} color="#fff" />
             </Pressable>
             <Text style={styles.topTitle}>手电筒相机</Text>
@@ -135,7 +139,7 @@ export default function CameraFlashToolScreen() {
             </View>
             <BrightnessSlider value={brightness} onValueChange={setBrightness} />
             <Text style={styles.platformNote}>
-              亮度通过原生 torch 级别调节；低于 5% 关闭闪光灯。修改后需重新 Dev Build 安装。
+              亮度通过原生 torch 级别调节；低于 5% 关闭闪光灯。
             </Text>
           </View>
         </View>
@@ -180,17 +184,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
-  primaryButton: {
+  permissionButton: {
     marginTop: 8,
-    backgroundColor: AppTheme.accent,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  primaryButtonText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 15,
+    alignSelf: 'stretch',
+    width: '100%',
+    maxWidth: 320,
   },
   secondaryButton: {
     paddingHorizontal: 16,
@@ -258,7 +256,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: AppTheme.overlayButton,
   },
   topTitle: {
     flex: 1,
@@ -270,7 +268,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 12,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: AppTheme.overlayButton,
   },
   zoomText: {
     color: '#fff',
@@ -285,7 +283,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 20,
     paddingTop: 16,
-    backgroundColor: 'rgba(15,17,23,0.88)',
+    backgroundColor: AppTheme.overlayScrim,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
   },

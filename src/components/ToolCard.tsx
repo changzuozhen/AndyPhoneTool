@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { AppTheme } from '@/constants/theme';
+import { AppLayout, AppTheme } from '@/constants/theme';
 import type { ToolDefinition } from '@/constants/tools';
 
 type ToolCardProps = {
@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 16,
     backgroundColor: AppTheme.surface,
-    borderRadius: 16,
+    borderRadius: AppLayout.toolCardRadius,
     borderWidth: 1,
     borderColor: AppTheme.border,
     padding: 18,

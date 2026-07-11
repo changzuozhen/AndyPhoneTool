@@ -25,22 +25,28 @@ class NetSpeedOverlayManager(private val context: Context) {
       return
     }
 
-    val download = createLineView("↓ --", Color.parseColor("#FFB347"))
-    val upload = createLineView("↑ --", Color.parseColor("#6EC1FF"))
+    val download = createLineView("↓ --", Color.parseColor("#4ADE80"))
+    val upload = createLineView("↑ --", Color.parseColor("#4DA3FF"))
 
     downloadView = download
     uploadView = upload
 
+    val gap = dp(8)
     val overlay = LinearLayout(context).apply {
-      orientation = LinearLayout.VERTICAL
-      val padding = dp(12)
-      setPadding(padding, padding, padding, padding)
+      orientation = LinearLayout.HORIZONTAL
+      gravity = Gravity.CENTER_VERTICAL
+      val paddingH = dp(12)
+      val paddingV = dp(8)
+      setPadding(paddingH, paddingV, paddingH, paddingV)
       background = GradientDrawable().apply {
-        setColor(Color.parseColor("#CC0F1117"))
-        cornerRadius = dp(14).toFloat()
-        setStroke(dp(1), Color.parseColor("#33FFFFFF"))
+        setColor(Color.parseColor("#E61A1D26"))
+        cornerRadius = dp(10).toFloat()
+        setStroke(dp(1), Color.parseColor("#2E3340"))
       }
       addView(download)
+      addView(View(context).apply {
+        layoutParams = LinearLayout.LayoutParams(gap, 1)
+      })
       addView(upload)
     }
 
@@ -87,9 +93,8 @@ class NetSpeedOverlayManager(private val context: Context) {
     return TextView(context).apply {
       this.text = text
       setTextColor(color)
-      setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
-      typeface = android.graphics.Typeface.MONOSPACE
-      setLineSpacing(0f, 1.1f)
+      setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
+      setTypeface(typeface, android.graphics.Typeface.BOLD)
     }
   }
 
