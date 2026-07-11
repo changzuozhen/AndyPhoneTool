@@ -143,7 +143,7 @@ export default function NetSpeedToolScreen() {
         <Text style={styles.heroTitle}>实时网速 · 盖在其他 App 上</Text>
         <Text style={styles.heroText}>
           {Platform.OS === 'ios'
-            ? '开启后请切到后台，系统会以画中画小窗显示网速。'
+            ? '开启后系统会启动画中画小窗；切到桌面或其他 App 即可看到实时网速。'
             : '开启后可在任意 App 上方看到悬浮网速条，按住可拖动位置。'}
         </Text>
       </View>
@@ -172,7 +172,9 @@ export default function NetSpeedToolScreen() {
           disabled={busy}
           onPress={handleRequestPermission}>
           <Text style={styles.primaryButtonText}>
-            {Platform.OS === 'android' ? '前往授权「显示在其他应用上层」' : '检查画中画可用性'}
+            {Platform.OS === 'android'
+              ? '前往授权「显示在其他应用上层」'
+              : '确认画中画可用性'}
           </Text>
         </Pressable>
       )}
@@ -193,9 +195,9 @@ export default function NetSpeedToolScreen() {
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
       <Text style={styles.note}>
-        {Platform.OS === 'android'
-          ? 'Android 已支持系统悬浮窗与 TrafficStats 实时网速。iOS 画中画将在后续阶段实现。'
-          : 'iOS 画中画实现将在后续阶段完成。'}
+        {Platform.OS === 'ios'
+          ? 'iOS 使用画中画显示网速，开启后请切到后台查看小窗。窗口位置与大小由系统管理。'
+          : 'Android 使用系统悬浮窗，按住浮窗可拖动位置。'}
       </Text>
     </View>
   );

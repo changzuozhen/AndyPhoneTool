@@ -2,8 +2,6 @@ import AVKit
 import ExpoModulesCore
 
 public class NetSpeedOverlayModule: Module {
-  private var running = false
-
   public func definition() -> ModuleDefinition {
     Name("NetSpeedOverlay")
 
@@ -19,16 +17,28 @@ public class NetSpeedOverlayModule: Module {
       AVPictureInPictureController.isPictureInPictureSupported()
     }
 
-    AsyncFunction("start") { [weak self] in
-      self?.running = true
+    AsyncFunction("start") { (promise: Promise) in
+      DispatchQueue.main.async {
+        do {
+          try NetSpeedPiPSession.shared.start()
+          promise.resolve()
+        } catch {
+          promise.reject(error)
+        }
+      }
     }
 
-    AsyncFunction("stop") { [weak self] in
-      self?.running = false
+    AsyncFunction("stop") { (promise: Promise) in
+      DispatchQueue.main.async {
+        NetSpeedPiPSession.shared.stop()
+        promise.resolve()
+      }
     }
 
-    AsyncFunction("isRunning") { [weak self] in
-      self?.running ?? false
+    AsyncFunction("isRunning") { (promise: Promise) in
+      DispatchQueue.main.async {
+        promise.resolve(NetSpeedPiPSession.shared.isActive)
+      }
     }
   }
 }
