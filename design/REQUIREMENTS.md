@@ -1,6 +1,8 @@
 # AndyPhoneTool 设计需求
 
-> 使用 [Pencil](https://pencil.dev) 维护 `.pen` 设计稿。请在 Pencil 中新建 `design/AndyPhoneTool.pen` 并打开该文件，Agent 即可通过 Pencil MCP 读写设计。
+> 使用 [Pencil](https://pencil.dev) 维护 `.pen` 设计稿。请在 Pencil 中打开 `design/AndyPhoneTool.pen` 后，Agent 即可通过 Pencil MCP 协作编辑。
+>
+> 若文件内容异常（例如仍显示其他项目画板），可运行 `node scripts/generate-andyphone-pen.mjs` 从需求文档重新生成设计稿。
 
 ## 产品定位
 
