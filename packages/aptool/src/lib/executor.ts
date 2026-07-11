@@ -1,7 +1,6 @@
 import { spawn } from 'node:child_process';
 import { existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { Listr } from 'listr2';
 
 import { loadEnvLocal } from './project.js';
 import { getMetroEnvForIosTarget } from './ios-devices.js';
@@ -50,24 +49,32 @@ export async function runWithSteps(options: RunOptions): Promise<void> {
     throw new Error('runWithSteps 需要 steps');
   }
 
-  const tasks = new Listr(
-    steps.map((step) => ({
-      title: step.title,
-      task: async () => {
+  // 顺序执行，直接透传子进程 stdio（不用 Listr spinner）。
+  // 构建类命令输出很长，spinner 渲染会覆盖/吞掉底层 xcodebuild / expo 的
+  // 报错信息，导致失败时只剩下 "命令失败 (N)"，无法定位真正原因。
+  const runSteps = async () => {
+    const total = steps.length;
+    for (let i = 0; i < total; i++) {
+      const step = steps[i]!;
+      console.log(`\n▶ [${i + 1}/${total}] ${step.title}`);
+      try {
         await runCommand(step.command, step.args ?? [], {
           cwd: step.cwd ?? cwd,
           env: step.env,
         });
-      },
-    })),
-    { concurrent: false },
-  );
+        console.log(`✔ [${i + 1}/${total}] ${step.title}`);
+      } catch (error) {
+        console.log(`✖ [${i + 1}/${total}] ${step.title} 失败`);
+        throw error;
+      }
+    }
+  };
 
   if (options.longTask) {
     const { terminal } = await import('./terminal.js');
-    await terminal.withLongTask(taskTitle, () => tasks.run());
+    await terminal.withLongTask(taskTitle, runSteps);
   } else {
-    await tasks.run();
+    await runSteps();
   }
 }
 

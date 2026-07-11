@@ -1,5 +1,7 @@
 import { execSync } from 'node:child_process';
-import { networkInterfaces } from 'node:os';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { networkInterfaces, tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 export type IosDevice = {
   name: string;
@@ -8,34 +10,57 @@ export type IosDevice = {
   state: string;
 };
 
-/** 通过 xcrun devicectl 列出已连接的物理 iOS 设备 */
+type DevicectlDevice = {
+  deviceProperties?: { name?: string };
+  hardwareProperties?: {
+    udid?: string;
+    marketingName?: string;
+    productType?: string;
+    deviceType?: string;
+  };
+  connectionProperties?: { tunnelState?: string };
+};
+
+/**
+ * 通过 xcrun devicectl 列出已连接的物理 iOS 设备。
+ *
+ * 使用 --json-output 读取 hardwareProperties.udid（如 00008110-...），
+ * 而不是文本表格里的 CoreDevice Identifier（如 723BDA0F-...）。
+ * expo run:ios --device 只认硬件 UDID / 设备名，传 CoreDevice UUID 会报
+ * "No device UDID or name matching"。
+ */
 export function listPhysicalIosDevices(): IosDevice[] {
+  let workDir: string | undefined;
   try {
-    const output = execSync('xcrun devicectl list devices 2>/dev/null', {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
+    workDir = mkdtempSync(join(tmpdir(), 'aptool-ios-'));
+    const jsonPath = join(workDir, 'devices.json');
+    execSync(`xcrun devicectl list devices --json-output "${jsonPath}"`, {
+      stdio: ['ignore', 'ignore', 'ignore'],
     });
 
+    const parsed = JSON.parse(readFileSync(jsonPath, 'utf8')) as {
+      result?: { devices?: DevicectlDevice[] };
+    };
+
     const devices: IosDevice[] = [];
-    for (const line of output.split('\n')) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith('Name') || trimmed.startsWith('---')) continue;
-
-      const parts = trimmed.split(/\s{2,}/);
-      if (parts.length < 4) continue;
-
-      const name = parts[0]?.trim();
-      const udid = parts[2]?.trim();
-      const state = parts[3]?.trim();
-      const model = parts.slice(4).join(' ').trim();
-      if (state?.toLowerCase() !== 'connected') continue;
+    for (const dev of parsed.result?.devices ?? []) {
+      const hw = dev.hardwareProperties ?? {};
+      const name = dev.deviceProperties?.name?.trim();
+      const udid = hw.udid?.trim();
       if (!name || !udid) continue;
+      if (dev.connectionProperties?.tunnelState !== 'connected') continue;
 
-      devices.push({ name, udid, model, state });
+      const model = hw.marketingName
+        ? `${hw.marketingName}${hw.productType ? ` (${hw.productType})` : ''}`
+        : (hw.productType ?? '');
+
+      devices.push({ name, udid, model, state: 'connected' });
     }
     return devices;
   } catch {
     return [];
+  } finally {
+    if (workDir) rmSync(workDir, { recursive: true, force: true });
   }
 }
 

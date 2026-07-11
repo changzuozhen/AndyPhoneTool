@@ -87,6 +87,7 @@ export const commandRegistry: CommandMeta[] = [
     examples: ['aptool repeat', 'aptool rr'],
   },
   {
+    id: 'env:setup-cn',
     group: 'env',
     action: 'setup-cn',
     description: '配置国内 npm 镜像与环境变量',
