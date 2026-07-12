@@ -54,21 +54,19 @@ export default function CameraFlashToolScreen() {
     setCameraReady(true);
   }, []);
 
-  // 相机就绪或亮度变化时，重新应用 torch 级别（iOS 需重新 setTorchModeOn）
+  // 相机就绪后延迟开启 torch（解决 expo-camera 首次 enableTorch 不生效）
   useEffect(() => {
-    if (!cameraReady) {
-      return;
-    }
-
-    if (!torchEnabled) {
-      setTorchActive(false);
+    if (!cameraReady || !torchEnabled) {
+      if (cameraReady) {
+        setTorchActive(false);
+      }
       return;
     }
 
     setTorchActive(false);
-    const timer = setTimeout(() => setTorchActive(true), 50);
+    const timer = setTimeout(() => setTorchActive(true), 80);
     return () => clearTimeout(timer);
-  }, [cameraReady, brightness, torchEnabled]);
+  }, [cameraReady, torchEnabled]);
 
   if (!permission) {
     return (

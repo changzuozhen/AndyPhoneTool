@@ -32,35 +32,52 @@ export function BrightnessSlider({ value, onValueChange }: BrightnessSliderProps
 
   return (
     <View style={styles.container}>
-      <View
-        style={styles.track}
-        onLayout={onLayout}
-        {...panResponder.panHandlers}>
-        <View style={[styles.fill, { width: `${value * 100}%` }]} />
+      <View style={styles.touchArea} onLayout={onLayout} {...panResponder.panHandlers}>
+        <View style={styles.track}>
+          <View style={[styles.fill, { width: `${value * 100}%` }]} />
+          <View style={[styles.thumb, { left: `${value * 100}%` }]} />
+        </View>
       </View>
       <Text style={styles.value}>亮度 {Math.round(value * 100)}%</Text>
     </View>
   );
 }
 
+const THUMB_SIZE = 22;
+
 const styles = StyleSheet.create({
   container: {
     gap: 8,
   },
+  touchArea: {
+    paddingVertical: 18,
+    justifyContent: 'center',
+  },
   track: {
-    height: 6,
-    borderRadius: 3,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: AppTheme.border,
     justifyContent: 'center',
-    overflow: 'hidden',
+    overflow: 'visible',
   },
   fill: {
     position: 'absolute',
     left: 0,
     top: 0,
     bottom: 0,
-    borderRadius: 3,
+    borderRadius: 4,
     backgroundColor: AppTheme.accentWarm,
+  },
+  thumb: {
+    position: 'absolute',
+    top: (8 - THUMB_SIZE) / 2,
+    width: THUMB_SIZE,
+    height: THUMB_SIZE,
+    marginLeft: -THUMB_SIZE / 2,
+    borderRadius: THUMB_SIZE / 2,
+    backgroundColor: '#fff',
+    borderWidth: 2,
+    borderColor: AppTheme.accentWarm,
   },
   value: {
     color: AppTheme.textSecondary,

@@ -65,9 +65,13 @@ export default function NetSpeedToolScreen() {
       running,
     });
 
-    if (running) {
-      const sample = await NetSpeedOverlay.getLastSpeed();
-      setSpeedPreview(sample);
+    if (running && typeof NetSpeedOverlay.getLastSpeed === 'function') {
+      try {
+        const sample = await NetSpeedOverlay.getLastSpeed();
+        setSpeedPreview(sample);
+      } catch {
+        setSpeedPreview(null);
+      }
     } else {
       setSpeedPreview(null);
     }

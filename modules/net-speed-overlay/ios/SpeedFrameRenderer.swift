@@ -48,8 +48,52 @@ final class SpeedFrameRenderer {
   }
 
   private func makePixelBuffer(downloadText: String, uploadText: String) -> CVPixelBuffer? {
+    let size = CGSize(width: width, height: height)
+    let renderer = UIGraphicsImageRenderer(size: size)
+
+    let image = renderer.image { context in
+      let rect = CGRect(origin: .zero, size: size)
+      UIColor(red: 0.10, green: 0.11, blue: 0.15, alpha: 0.92).setFill()
+      context.fill(rect)
+
+      let downloadAttributes: [NSAttributedString.Key: Any] = [
+        .font: UIFont.monospacedSystemFont(ofSize: 12, weight: .bold),
+        .foregroundColor: UIColor(red: 0.29, green: 0.87, blue: 0.50, alpha: 1.0),
+      ]
+      let uploadAttributes: [NSAttributedString.Key: Any] = [
+        .font: UIFont.monospacedSystemFont(ofSize: 12, weight: .bold),
+        .foregroundColor: UIColor(red: 0.30, green: 0.64, blue: 1.0, alpha: 1.0),
+      ]
+
+      let download = NSAttributedString(string: downloadText, attributes: downloadAttributes)
+      let upload = NSAttributedString(string: uploadText, attributes: uploadAttributes)
+      let downloadSize = download.size()
+
+      let padding: CGFloat = 12
+      let gap: CGFloat = 8
+      let baselineY = (CGFloat(height) - downloadSize.height) / 2
+
+      download.draw(in: CGRect(x: padding, y: baselineY, width: downloadSize.width, height: downloadSize.height))
+      upload.draw(
+        in: CGRect(
+          x: padding + downloadSize.width + gap,
+          y: baselineY,
+          width: size.width - padding * 2,
+          height: downloadSize.height
+        )
+      )
+    }
+
+    return pixelBuffer(from: image)
+  }
+
+  private func pixelBuffer(from image: UIImage) -> CVPixelBuffer? {
+    guard let cgImage = image.cgImage else {
+      return nil
+    }
+
     var pixelBuffer: CVPixelBuffer?
-    let attributes = [
+    let attrs = [
       kCVPixelBufferCGImageCompatibilityKey: true,
       kCVPixelBufferCGBitmapContextCompatibilityKey: true,
     ] as CFDictionary
@@ -59,7 +103,7 @@ final class SpeedFrameRenderer {
       width,
       height,
       kCVPixelFormatType_32BGRA,
-      attributes,
+      attrs,
       &pixelBuffer
     )
 
@@ -70,54 +114,19 @@ final class SpeedFrameRenderer {
     CVPixelBufferLockBaseAddress(pixelBuffer, [])
     defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, []) }
 
-    guard let baseAddress = CVPixelBufferGetBaseAddress(pixelBuffer) else {
-      return nil
-    }
-
-    let bytesPerRow = CVPixelBufferGetBytesPerRow(pixelBuffer)
-    let colorSpace = CGColorSpaceCreateDeviceRGB()
-    let bitmapInfo = CGBitmapInfo.byteOrder32Little.rawValue | CGImageAlphaInfo.premultipliedFirst.rawValue
-
     guard let context = CGContext(
-      data: baseAddress,
+      data: CVPixelBufferGetBaseAddress(pixelBuffer),
       width: width,
       height: height,
       bitsPerComponent: 8,
-      bytesPerRow: bytesPerRow,
-      space: colorSpace,
-      bitmapInfo: bitmapInfo
+      bytesPerRow: CVPixelBufferGetBytesPerRow(pixelBuffer),
+      space: CGColorSpaceCreateDeviceRGB(),
+      bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue
     ) else {
       return nil
     }
 
-    context.setFillColor(UIColor(red: 0.10, green: 0.11, blue: 0.15, alpha: 0.92).cgColor)
-    context.fill(CGRect(x: 0, y: 0, width: width, height: height))
-
-    let downloadAttributes: [NSAttributedString.Key: Any] = [
-      .font: UIFont.monospacedSystemFont(ofSize: 12, weight: .bold),
-      .foregroundColor: UIColor(red: 0.29, green: 0.87, blue: 0.50, alpha: 1.0),
-    ]
-    let uploadAttributes: [NSAttributedString.Key: Any] = [
-      .font: UIFont.monospacedSystemFont(ofSize: 12, weight: .bold),
-      .foregroundColor: UIColor(red: 0.30, green: 0.64, blue: 1.0, alpha: 1.0),
-    ]
-
-    let download = NSAttributedString(string: downloadText, attributes: downloadAttributes)
-    let upload = NSAttributedString(string: uploadText, attributes: uploadAttributes)
-
-    let downloadSize = download.size()
-    let padding: CGFloat = 12
-    let gap: CGFloat = 8
-    download.draw(in: CGRect(x: padding, y: 18, width: downloadSize.width, height: 20))
-    upload.draw(
-      in: CGRect(
-        x: padding + downloadSize.width + gap,
-        y: 18,
-        width: CGFloat(width) - padding * 2,
-        height: 20
-      )
-    )
-
+    context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
     return pixelBuffer
   }
 }
