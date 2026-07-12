@@ -10,6 +10,8 @@ final class NetSpeedMonitor {
   private var lastTxBytes: UInt64?
   private var lastSampleAt: TimeInterval?
 
+  private(set) var lastSample = SpeedSample(downloadBps: 0, uploadBps: 0)
+
   func sample() -> SpeedSample {
     let now = ProcessInfo.processInfo.systemUptime
     let (rxBytes, txBytes) = readInterfaceBytes()
@@ -18,7 +20,8 @@ final class NetSpeedMonitor {
       self.lastRxBytes = rxBytes
       self.lastTxBytes = txBytes
       self.lastSampleAt = now
-      return SpeedSample(downloadBps: 0, uploadBps: 0)
+      lastSample = SpeedSample(downloadBps: 0, uploadBps: 0)
+      return lastSample
     }
 
     let elapsed = max(now - lastSampleAt, 0.001)
@@ -29,10 +32,11 @@ final class NetSpeedMonitor {
     self.lastTxBytes = txBytes
     self.lastSampleAt = now
 
-    return SpeedSample(
+    lastSample = SpeedSample(
       downloadBps: max(downloadBps, 0),
       uploadBps: max(uploadBps, 0)
     )
+    return lastSample
   }
 
   private func readInterfaceBytes() -> (UInt64, UInt64) {
@@ -45,16 +49,22 @@ final class NetSpeedMonitor {
 
     var rxBytes: UInt64 = 0
     var txBytes: UInt64 = 0
+    var seenInterfaces = Set<String>()
     var pointer: UnsafeMutablePointer<ifaddrs>? = firstAddress
 
     while let current = pointer {
       let interface = current.pointee
       let name = String(cString: interface.ifa_name)
 
-      if name == "en0" || name.hasPrefix("pdp_ip"), interface.ifa_data != nil {
+      if (name == "en0" || name.hasPrefix("pdp_ip")),
+         let addr = interface.ifa_addr,
+         addr.pointee.sa_family == UInt8(AF_LINK),
+         interface.ifa_data != nil,
+         !seenInterfaces.contains(name) {
         let data = interface.ifa_data!.assumingMemoryBound(to: if_data.self).pointee
         rxBytes &+= UInt64(data.ifi_ibytes)
         txBytes &+= UInt64(data.ifi_obytes)
+        seenInterfaces.insert(name)
       }
 
       pointer = interface.ifa_next

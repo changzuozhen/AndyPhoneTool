@@ -80,6 +80,14 @@ final class NetSpeedPiPSession: NSObject {
     try? AVAudioSession.sharedInstance().setActive(false, options: [.notifyOthersOnDeactivation])
   }
 
+  func getLastSpeed() -> [String: Int64] {
+    let sample = monitor.lastSample
+    return [
+      "downloadBps": sample.downloadBps,
+      "uploadBps": sample.uploadBps,
+    ]
+  }
+
   private func configureAudioSession() throws {
     let session = AVAudioSession.sharedInstance()
     try session.setCategory(.playback, mode: .moviePlayback, options: [])
@@ -118,13 +126,18 @@ final class NetSpeedPiPSession: NSObject {
     pollTimer?.invalidate()
     heartbeatTimer?.invalidate()
 
-    pollTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+    let poll = Timer(timeInterval: 1.0, repeats: true) { [weak self] _ in
       self?.pollSpeed()
     }
-
-    heartbeatTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+    let heartbeat = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
       self?.heartbeat()
     }
+
+    RunLoop.main.add(poll, forMode: .common)
+    RunLoop.main.add(heartbeat, forMode: .common)
+
+    pollTimer = poll
+    heartbeatTimer = heartbeat
   }
 
   private func pollSpeed() {
@@ -219,6 +232,12 @@ extension NetSpeedPiPSession: AVPictureInPictureSampleBufferPlaybackDelegate {
 }
 
 extension NetSpeedPiPSession: AVPictureInPictureControllerDelegate {
+  func pictureInPictureControllerDidStartPictureInPicture(
+    _ pictureInPictureController: AVPictureInPictureController
+  ) {
+    pollSpeed()
+  }
+
   func pictureInPictureControllerDidStopPictureInPicture(
     _ pictureInPictureController: AVPictureInPictureController
   ) {

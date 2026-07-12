@@ -32,6 +32,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     letterSpacing: 0.8,
-    textTransform: 'uppercase',
   },
 });

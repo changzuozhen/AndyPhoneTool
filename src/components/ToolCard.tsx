@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Link } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppLayout, AppTheme } from '@/constants/theme';
@@ -17,6 +17,7 @@ const ICON_MAP = {
 } as const;
 
 export function ToolCard({ tool }: ToolCardProps) {
+  const router = useRouter();
   const iconName = ICON_MAP[tool.icon];
 
   if (!tool.available) {
@@ -35,18 +36,18 @@ export function ToolCard({ tool }: ToolCardProps) {
   }
 
   return (
-    <Link href={tool.route} asChild>
-      <Pressable style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}>
-        <View style={styles.iconWrap}>
-          <Ionicons name={iconName} size={28} color={AppTheme.accentWarm} />
-        </View>
-        <View style={styles.content}>
-          <Text style={styles.title}>{tool.title}</Text>
-          <Text style={styles.description}>{tool.description}</Text>
-        </View>
-        <Ionicons name="chevron-forward" size={20} color={AppTheme.textSecondary} />
-      </Pressable>
-    </Link>
+    <Pressable
+      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+      onPress={() => router.push(tool.route)}>
+      <View style={styles.iconWrap}>
+        <Ionicons name={iconName} size={28} color={AppTheme.accentWarm} />
+      </View>
+      <View style={styles.content}>
+        <Text style={styles.title}>{tool.title}</Text>
+        <Text style={styles.description}>{tool.description}</Text>
+      </View>
+      <Ionicons name="chevron-forward" size={20} color={AppTheme.textSecondary} />
+    </Pressable>
   );
 }
 
@@ -54,6 +55,8 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
+    alignSelf: 'stretch',
+    width: '100%',
     gap: 16,
     backgroundColor: AppTheme.surface,
     borderRadius: AppLayout.toolCardRadius,
@@ -81,6 +84,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    minWidth: 0,
     gap: 4,
   },
   title: {
@@ -104,7 +108,6 @@ const styles = StyleSheet.create({
     color: AppTheme.textSecondary,
     fontSize: 11,
     fontWeight: '600',
-    textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
 });

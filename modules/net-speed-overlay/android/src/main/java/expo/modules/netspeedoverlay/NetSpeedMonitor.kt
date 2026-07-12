@@ -7,6 +7,8 @@ class NetSpeedMonitor {
   private var lastRxBytes = -1L
   private var lastTxBytes = -1L
   private var lastSampleAt = 0L
+  var lastSample = SpeedSample(0, 0)
+    private set
 
   fun sample(): SpeedSample {
     val now = SystemClock.elapsedRealtime()
@@ -17,7 +19,8 @@ class NetSpeedMonitor {
       lastRxBytes = rxBytes.coerceAtLeast(0)
       lastTxBytes = txBytes.coerceAtLeast(0)
       lastSampleAt = now
-      return SpeedSample(0, 0)
+      lastSample = SpeedSample(0, 0)
+      return lastSample
     }
 
     val elapsedMs = (now - lastSampleAt).coerceAtLeast(1)
@@ -28,7 +31,8 @@ class NetSpeedMonitor {
     lastTxBytes = txBytes
     lastSampleAt = now
 
-    return SpeedSample(downloadBps, uploadBps)
+    lastSample = SpeedSample(downloadBps, uploadBps)
+    return lastSample
   }
 }
 

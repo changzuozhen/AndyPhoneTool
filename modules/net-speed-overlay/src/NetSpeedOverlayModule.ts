@@ -1,6 +1,6 @@
 import { NativeModule, requireNativeModule } from 'expo';
 
-import type { NetSpeedOverlayModuleEvents } from './NetSpeedOverlay.types';
+import type { NetSpeedOverlayModuleEvents, NetSpeedSample } from './NetSpeedOverlay.types';
 
 declare class NetSpeedOverlayModule extends NativeModule<NetSpeedOverlayModuleEvents> {
   isSupported(): boolean;
@@ -9,6 +9,7 @@ declare class NetSpeedOverlayModule extends NativeModule<NetSpeedOverlayModuleEv
   start(): Promise<void>;
   stop(): Promise<void>;
   isRunning(): Promise<boolean>;
+  getLastSpeed(): Promise<NetSpeedSample>;
 }
 
 export default requireNativeModule<NetSpeedOverlayModule>('NetSpeedOverlay');

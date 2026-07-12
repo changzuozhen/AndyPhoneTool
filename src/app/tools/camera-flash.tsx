@@ -15,7 +15,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BrightnessSlider } from '@/components/BrightnessSlider';
 import { PrimaryButton } from '@/components/PrimaryButton';
-import { ScreenHeader } from '@/components/ScreenHeader';
 import { AppTheme } from '@/constants/theme';
 
 const DEFAULT_BRIGHTNESS = 0.75;
@@ -55,18 +54,21 @@ export default function CameraFlashToolScreen() {
     setCameraReady(true);
   }, []);
 
-  // expo-camera 首次渲染时 enableTorch 可能不生效，相机就绪后延迟开启一次
+  // 相机就绪或亮度变化时，重新应用 torch 级别（iOS 需重新 setTorchModeOn）
   useEffect(() => {
-    if (!cameraReady) return;
-    setTorchActive(torchEnabled);
-  }, [cameraReady, torchEnabled]);
+    if (!cameraReady) {
+      return;
+    }
 
-  useEffect(() => {
-    if (!cameraReady || !torchEnabled) return;
+    if (!torchEnabled) {
+      setTorchActive(false);
+      return;
+    }
+
     setTorchActive(false);
-    const timer = setTimeout(() => setTorchActive(true), 80);
+    const timer = setTimeout(() => setTorchActive(true), 50);
     return () => clearTimeout(timer);
-  }, [cameraReady]);
+  }, [cameraReady, brightness, torchEnabled]);
 
   if (!permission) {
     return (
@@ -117,20 +119,19 @@ export default function CameraFlashToolScreen() {
             <View style={styles.focusCornerBR} />
           </View>
 
-          <View style={styles.topBar} pointerEvents="box-none">
-            <ScreenHeader
-              title="手电筒相机"
-              onBack={() => router.back()}
-              variant="overlay"
-              rightSlot={
-                <View style={styles.zoomBadge}>
-                  <Text style={styles.zoomText}>{Math.round(zoom * 100)}%</Text>
-                </View>
-              }
-            />
+          <View style={[styles.topBar, { paddingTop: insets.top }]} pointerEvents="box-none">
+            <Pressable style={styles.backButton} onPress={() => router.back()} hitSlop={8}>
+              <Ionicons name="chevron-back" size={24} color="#fff" />
+            </Pressable>
+            <Text style={styles.topTitle} numberOfLines={1}>
+              手电筒相机
+            </Text>
+            <View style={styles.zoomBadge}>
+              <Text style={styles.zoomText}>{Math.round(zoom * 100)}%</Text>
+            </View>
           </View>
 
-          <View style={[styles.bottomPanel, { paddingBottom: insets.bottom + 16 }]}>
+          <View style={[styles.bottomPanel, { paddingBottom: insets.bottom + 32 }]}>
             <View style={styles.statusRow}>
               <View style={[styles.statusDot, torchEnabled && styles.statusDotOn]} />
               <Text style={styles.statusText}>
@@ -246,6 +247,25 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingBottom: 4,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: AppTheme.overlayButton,
+  },
+  topTitle: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: '600',
+    flexShrink: 1,
   },
   zoomBadge: {
     paddingHorizontal: 10,
@@ -274,7 +294,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    flexWrap: 'wrap',
   },
   statusDot: {
     width: 8,
@@ -291,6 +310,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   hintText: {
+    flex: 1,
     color: AppTheme.textSecondary,
     fontSize: 12,
   },

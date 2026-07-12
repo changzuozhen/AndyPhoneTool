@@ -22,6 +22,7 @@ class NetSpeedService : Service() {
   private val pollRunnable = object : Runnable {
     override fun run() {
       val sample = monitor.sample()
+      NetSpeedService.updateLastSample(sample.downloadBps, sample.uploadBps)
       overlayManager?.updateSpeed(sample.downloadBps, sample.uploadBps)
       handler.postDelayed(this, POLL_INTERVAL_MS)
     }
@@ -137,5 +138,18 @@ class NetSpeedService : Service() {
     @Volatile
     var isActive: Boolean = false
       private set
+
+    @Volatile
+    var lastDownloadBps: Long = 0
+      private set
+
+    @Volatile
+    var lastUploadBps: Long = 0
+      private set
+
+    fun updateLastSample(downloadBps: Long, uploadBps: Long) {
+      lastDownloadBps = downloadBps
+      lastUploadBps = uploadBps
+    }
   }
 }

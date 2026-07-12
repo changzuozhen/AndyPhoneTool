@@ -32,7 +32,17 @@ export function ScreenHeader({
           color={isOverlay ? '#fff' : AppTheme.textPrimary}
         />
       </Pressable>
-      <Text style={[styles.title, isOverlay && styles.titleOverlay]}>{title}</Text>
+      {isOverlay ? (
+        <Text style={[styles.title, styles.titleOverlay]} numberOfLines={1}>
+          {title}
+        </Text>
+      ) : (
+        <View style={styles.titleCenter} pointerEvents="none">
+          <Text style={styles.title} numberOfLines={1}>
+            {title}
+          </Text>
+        </View>
+      )}
       {rightSlot ?? <View style={styles.placeholder} />}
     </View>
   );
@@ -57,15 +67,27 @@ const styles = StyleSheet.create({
   iconButtonOverlay: {
     backgroundColor: AppTheme.overlayButton,
   },
+  titleCenter: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 4,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 56,
+  },
   title: {
     color: AppTheme.textPrimary,
     fontSize: 17,
     fontWeight: '700',
+    textAlign: 'center',
   },
   titleOverlay: {
     flex: 1,
     color: '#fff',
     fontWeight: '600',
+    textAlign: 'left',
   },
   placeholder: {
     width: 40,

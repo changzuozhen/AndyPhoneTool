@@ -40,5 +40,11 @@ public class NetSpeedOverlayModule: Module {
         promise.resolve(NetSpeedPiPSession.shared.isActive)
       }
     }
+
+    AsyncFunction("getLastSpeed") { (promise: Promise) in
+      DispatchQueue.main.async {
+        promise.resolve(NetSpeedPiPSession.shared.getLastSpeed())
+      }
+    }
   }
 }

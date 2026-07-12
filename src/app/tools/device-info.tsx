@@ -127,17 +127,10 @@ export default function DeviceInfoScreen() {
 
         <Section title="电量">
           <View style={styles.card}>
-            <View style={styles.batteryBarTrack}>
-              <View
-                style={[
-                  styles.batteryBarFill,
-                  { width: `${batteryPercent ?? 0}%` },
-                ]}
-              />
-              <Text style={styles.batteryBarText}>
-                {batteryPercent != null ? `${batteryPercent}%` : '不可用'}
-              </Text>
-            </View>
+            <InfoRow
+              label="电量"
+              value={batteryPercent != null ? `${batteryPercent}%` : '不可用'}
+            />
             <InfoRow
               label="状态"
               value={BATTERY_STATE_LABEL[batteryState] ?? '未知'}
@@ -164,9 +157,9 @@ export default function DeviceInfoScreen() {
 
         <Section title="传感器 · 实时">
           <View style={styles.sensorRow}>
-            <SensorCard title="加速度计" data={accel} />
-            <SensorCard title="陀螺仪" data={gyro} />
-            <SensorCard title="磁力计" data={magnet} />
+            <SensorCard title="加速度计" data={accel} axis="x" />
+            <SensorCard title="陀螺仪" data={gyro} axis="y" />
+            <SensorCard title="磁力计" data={magnet} axis="z" />
           </View>
         </Section>
       </ScrollView>
@@ -205,15 +198,17 @@ function InfoRow({
 function SensorCard({
   title,
   data,
+  axis,
 }: {
   title: string;
   data: Vector;
+  axis: 'x' | 'y' | 'z';
 }) {
   return (
     <View style={styles.sensorCard}>
       <Text style={styles.sensorTitle}>{title}</Text>
       <Text style={styles.sensorData}>
-        x:{data.x.toFixed(2)} y:{data.y.toFixed(2)} z:{data.z.toFixed(2)}
+        {axis}:{data[axis].toFixed(2)}
       </Text>
     </View>
   );
@@ -261,29 +256,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     textAlign: 'right',
-  },
-  batteryBarTrack: {
-    height: 30,
-    marginVertical: 14,
-    marginHorizontal: 16,
-    borderRadius: 8,
-    backgroundColor: AppTheme.surfaceElevated,
-    overflow: 'hidden',
-    justifyContent: 'center',
-  },
-  batteryBarFill: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    backgroundColor: AppTheme.success,
-    borderRadius: 8,
-  },
-  batteryBarText: {
-    textAlign: 'center',
-    color: AppTheme.textPrimary,
-    fontSize: 14,
-    fontWeight: '700',
   },
   sensorRow: {
     flexDirection: 'row',

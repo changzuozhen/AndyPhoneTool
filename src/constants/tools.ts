@@ -27,7 +27,7 @@ export const TOOLS: ToolDefinition[] = [
   {
     id: 'net-speed',
     title: '网速悬浮窗',
-    description: '在其他 App 上方显示实时上/下行网速（Android 悬浮窗 / iOS 画中画）',
+    description: '在其他 App 上方显示实时上/下行网速',
     icon: 'speedometer',
     route: '/tools/net-speed',
     available: true,

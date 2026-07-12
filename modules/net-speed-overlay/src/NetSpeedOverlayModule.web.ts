@@ -22,6 +22,10 @@ class NetSpeedOverlayModule extends NativeModule<NetSpeedOverlayModuleEvents> {
   async isRunning(): Promise<boolean> {
     return false;
   }
+
+  async getLastSpeed() {
+    return { downloadBps: 0, uploadBps: 0 };
+  }
 }
 
 export default registerWebModule(NetSpeedOverlayModule, 'NetSpeedOverlay');

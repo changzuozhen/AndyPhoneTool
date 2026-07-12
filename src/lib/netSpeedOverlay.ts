@@ -29,6 +29,24 @@ export function mapOverlayError(error: unknown): string {
   return matched?.message ?? (message || '操作失败，请稍后重试');
 }
 
+export function formatSpeed(bytesPerSecond: number): string {
+  if (bytesPerSecond < 1024) {
+    return `${bytesPerSecond} B/s`;
+  }
+
+  const kb = bytesPerSecond / 1024;
+  if (kb < 1024) {
+    return `${kb.toFixed(1)} KB/s`;
+  }
+
+  const mb = kb / 1024;
+  if (mb < 1024) {
+    return `${mb.toFixed(1)} MB/s`;
+  }
+
+  return `${(mb / 1024).toFixed(2)} GB/s`;
+}
+
 export async function ensureAndroidNotificationPermission(): Promise<boolean> {
   if (Platform.OS !== 'android' || Number(Platform.Version) < 33) {
     return true;
@@ -54,18 +72,30 @@ export function openAppSettings(): void {
   Linking.openSettings().catch(() => {});
 }
 
-export function getPlatformHint(): string {
+export function getPlatformHint(running: boolean): string {
   if (Platform.OS === 'ios') {
-    return 'iOS 画中画实现将在后续阶段完成。';
+    return running
+      ? '画中画已启动。请切到桌面或其他 App 查看小窗（App 内不会显示悬浮条）。'
+      : 'iOS 通过画中画显示网速；开启后需切到后台才能看到小窗。';
   }
 
-  return 'Android 已支持系统悬浮窗与 TrafficStats 实时网速。iOS 画中画将在后续阶段实现。';
+  return running
+    ? '悬浮窗运行中。可切到其他 App 验证，按住浮窗可拖动；也可从通知栏停止。'
+    : 'Android 使用系统悬浮窗显示全局网速（含其他 App 流量）。';
 }
 
 export function getHeroDescription(): string {
   if (Platform.OS === 'ios') {
-    return '开启后请切到后台，系统会以画中画小窗显示网速。';
+    return '开启后系统会启动画中画；请切到桌面或其他 App 查看网速小窗。';
   }
 
   return '开启后可在任意 App 上方看到悬浮网速条，按住可拖动位置。';
+}
+
+export function getPermissionGuide(): string {
+  if (Platform.OS === 'android') {
+    return '请在系统设置中为 AndyPhoneTool 开启「显示在其他应用上层」，返回 App 后点「刷新状态」。';
+  }
+
+  return '请确认设备支持画中画。开启后若 App 内看不到浮窗，属于正常现象，请切到后台查看。';
 }

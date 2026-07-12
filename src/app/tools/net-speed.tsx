@@ -19,10 +19,11 @@ import { StatusRow } from '@/components/StatusRow';
 import { AppLayout, AppTheme } from '@/constants/theme';
 import {
   ensureAndroidNotificationPermission,
+  formatSpeed,
   getHeroDescription,
+  getPermissionGuide,
   getPlatformHint,
   mapOverlayError,
-  openAppSettings,
 } from '@/lib/netSpeedOverlay';
 import NetSpeedOverlay from 'net-speed-overlay';
 
@@ -32,7 +33,12 @@ type OverlayState = {
   running: boolean;
 };
 
-const RUNNING_REFRESH_MS = 2000;
+type SpeedPreview = {
+  downloadBps: number;
+  uploadBps: number;
+};
+
+const RUNNING_REFRESH_MS = 1000;
 
 export default function NetSpeedToolScreen() {
   const router = useRouter();
@@ -40,12 +46,12 @@ export default function NetSpeedToolScreen() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [awaitingPermissionReturn, setAwaitingPermissionReturn] = useState(false);
   const [state, setState] = useState<OverlayState>({
     supported: false,
     hasPermission: false,
     running: false,
   });
+  const [speedPreview, setSpeedPreview] = useState<SpeedPreview | null>(null);
 
   const refreshState = useCallback(async () => {
     const [hasPermission, running] = await Promise.all([
@@ -59,8 +65,14 @@ export default function NetSpeedToolScreen() {
       running,
     });
 
+    if (running) {
+      const sample = await NetSpeedOverlay.getLastSpeed();
+      setSpeedPreview(sample);
+    } else {
+      setSpeedPreview(null);
+    }
+
     if (hasPermission) {
-      setAwaitingPermissionReturn(false);
       setError(null);
     }
   }, []);
@@ -106,7 +118,6 @@ export default function NetSpeedToolScreen() {
   const handleRequestPermission = async () => {
     setBusy(true);
     setError(null);
-    setAwaitingPermissionReturn(true);
     try {
       const granted = await NetSpeedOverlay.requestPermission();
       if (granted) {
@@ -115,7 +126,7 @@ export default function NetSpeedToolScreen() {
       }
 
       if (Platform.OS === 'android') {
-        setError('请在系统设置中开启权限，返回 App 后点击「刷新状态」。');
+        setError('请在系统设置中开启权限，返回 App 后会自动刷新状态。');
       } else {
         await refreshState();
       }
@@ -182,6 +193,21 @@ export default function NetSpeedToolScreen() {
           description={getHeroDescription()}
         />
 
+        {state.running && speedPreview ? (
+          <View style={styles.previewCard}>
+            <Text style={styles.previewTitle}>当前采样</Text>
+            <Text style={styles.previewDownload}>
+              ↓ {formatSpeed(speedPreview.downloadBps)}
+            </Text>
+            <Text style={styles.previewUpload}>↑ {formatSpeed(speedPreview.uploadBps)}</Text>
+            {Platform.OS === 'ios' ? (
+              <Text style={styles.previewHint}>
+                以上为 App 内采样值。画中画小窗需切到后台后查看。
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
+
         <View style={styles.card}>
           <StatusRow
             label="原生模块"
@@ -201,6 +227,13 @@ export default function NetSpeedToolScreen() {
         </View>
 
         {!state.hasPermission ? (
+          <View style={styles.guideCard}>
+            <Text style={styles.guideTitle}>需要权限</Text>
+            <Text style={styles.guideText}>{getPermissionGuide()}</Text>
+          </View>
+        ) : null}
+
+        {!state.hasPermission ? (
           <PrimaryButton
             label={
               Platform.OS === 'android'
@@ -212,28 +245,24 @@ export default function NetSpeedToolScreen() {
           />
         ) : null}
 
-        {!state.hasPermission && awaitingPermissionReturn ? (
-          <Pressable style={styles.linkButton} onPress={() => refreshState().catch(() => {})}>
-            <Text style={styles.linkButtonText}>刷新状态</Text>
-          </Pressable>
-        ) : null}
-
-        {!state.hasPermission && Platform.OS === 'android' ? (
-          <Pressable style={styles.linkButton} onPress={openAppSettings}>
-            <Text style={styles.linkButtonText}>打开系统设置</Text>
-          </Pressable>
-        ) : null}
-
-        <PrimaryButton
-          label={state.running ? '停止悬浮窗' : '开启悬浮窗'}
-          onPress={handleToggle}
-          disabled={!state.hasPermission || busy}
-          variant={state.running ? 'stop' : 'primary'}
-        />
+        {!state.running ? (
+          <PrimaryButton
+            label="开启悬浮窗"
+            onPress={handleToggle}
+            disabled={!state.hasPermission || busy}
+          />
+        ) : (
+          <PrimaryButton
+            label="停止悬浮窗"
+            onPress={handleToggle}
+            disabled={busy}
+            variant="stop"
+          />
+        )}
 
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-        <Text style={styles.note}>{getPlatformHint()}</Text>
+        <Text style={styles.note}>{getPlatformHint(state.running)}</Text>
       </View>
     </View>
   );
@@ -266,14 +295,56 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: AppTheme.border,
   },
-  linkButton: {
-    alignSelf: 'center',
-    paddingVertical: 4,
+  previewCard: {
+    gap: 6,
+    padding: 16,
+    borderRadius: AppLayout.toolCardRadius,
+    backgroundColor: AppTheme.surfaceElevated,
+    borderWidth: 1,
+    borderColor: AppTheme.border,
   },
-  linkButtonText: {
+  previewTitle: {
+    color: AppTheme.textSecondary,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.6,
+    textTransform: 'uppercase',
+  },
+  previewDownload: {
+    color: AppTheme.success,
+    fontSize: 18,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+  },
+  previewUpload: {
     color: AppTheme.accent,
+    fontSize: 18,
+    fontWeight: '700',
+    fontVariant: ['tabular-nums'],
+  },
+  previewHint: {
+    color: AppTheme.textSecondary,
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 4,
+  },
+  guideCard: {
+    gap: 6,
+    padding: 14,
+    borderRadius: AppLayout.cardRadius,
+    backgroundColor: AppTheme.surfaceElevated,
+    borderWidth: 1,
+    borderColor: AppTheme.border,
+  },
+  guideTitle: {
+    color: AppTheme.textPrimary,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
+  },
+  guideText: {
+    color: AppTheme.textSecondary,
+    fontSize: 13,
+    lineHeight: 18,
   },
   unsupportedTitle: {
     color: AppTheme.textPrimary,

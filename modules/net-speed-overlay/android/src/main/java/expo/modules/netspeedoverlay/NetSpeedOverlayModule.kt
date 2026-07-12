@@ -70,6 +70,13 @@ class NetSpeedOverlayModule : Module() {
     AsyncFunction("isRunning") {
       NetSpeedService.isActive
     }
+
+    AsyncFunction("getLastSpeed") {
+      mapOf(
+        "downloadBps" to NetSpeedService.lastDownloadBps,
+        "uploadBps" to NetSpeedService.lastUploadBps,
+      )
+    }
   }
 
   private fun canDrawOverlays(): Boolean {

@@ -31,6 +31,8 @@ export function PrimaryButton({
 
 const styles = StyleSheet.create({
   button: {
+    alignSelf: 'stretch',
+    width: '100%',
     minHeight: AppLayout.buttonHeight,
     borderRadius: AppLayout.buttonRadius,
     backgroundColor: AppTheme.accent,
