@@ -1,5 +1,7 @@
 import { useRef } from 'react';
-import { LayoutChangeEvent, PanResponder, StyleSheet, Text, View } from 'react-native';
+import { LayoutChangeEvent, StyleSheet, Text, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { runOnJS } from 'react-native-reanimated';
 
 import { AppTheme } from '@/constants/theme';
 
@@ -17,14 +19,15 @@ export function BrightnessSlider({ value, onValueChange }: BrightnessSliderProps
     onValueChange(next);
   };
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
-      onPanResponderGrant: (event) => updateFromX(event.nativeEvent.locationX),
-      onPanResponderMove: (event) => updateFromX(event.nativeEvent.locationX),
-    }),
-  ).current;
+  const panGesture = Gesture.Pan()
+    .minDistance(0)
+    .activeOffsetX([-4, 4])
+    .onBegin((event) => {
+      runOnJS(updateFromX)(event.x);
+    })
+    .onUpdate((event) => {
+      runOnJS(updateFromX)(event.x);
+    });
 
   const onLayout = (event: LayoutChangeEvent) => {
     trackWidth.current = event.nativeEvent.layout.width;
@@ -32,30 +35,33 @@ export function BrightnessSlider({ value, onValueChange }: BrightnessSliderProps
 
   return (
     <View style={styles.container}>
-      <View style={styles.touchArea} onLayout={onLayout} {...panResponder.panHandlers}>
-        <View style={styles.track}>
-          <View style={[styles.fill, { width: `${value * 100}%` }]} />
-          <View style={[styles.thumb, { left: `${value * 100}%` }]} />
+      <GestureDetector gesture={panGesture}>
+        <View style={styles.touchArea} onLayout={onLayout}>
+          <View style={styles.track}>
+            <View style={[styles.fill, { width: `${value * 100}%` }]} />
+            <View style={[styles.thumb, { left: `${value * 100}%` }]} />
+          </View>
         </View>
-      </View>
+      </GestureDetector>
       <Text style={styles.value}>亮度 {Math.round(value * 100)}%</Text>
     </View>
   );
 }
 
-const THUMB_SIZE = 22;
+const THUMB_SIZE = 28;
 
 const styles = StyleSheet.create({
   container: {
     gap: 8,
   },
   touchArea: {
-    paddingVertical: 18,
+    minHeight: 52,
+    paddingVertical: 20,
     justifyContent: 'center',
   },
   track: {
-    height: 8,
-    borderRadius: 4,
+    height: 10,
+    borderRadius: 5,
     backgroundColor: AppTheme.border,
     justifyContent: 'center',
     overflow: 'visible',
@@ -65,12 +71,12 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
     bottom: 0,
-    borderRadius: 4,
+    borderRadius: 5,
     backgroundColor: AppTheme.accentWarm,
   },
   thumb: {
     position: 'absolute',
-    top: (8 - THUMB_SIZE) / 2,
+    top: (10 - THUMB_SIZE) / 2,
     width: THUMB_SIZE,
     height: THUMB_SIZE,
     marginLeft: -THUMB_SIZE / 2,
@@ -78,6 +84,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderWidth: 2,
     borderColor: AppTheme.accentWarm,
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 3,
   },
   value: {
     color: AppTheme.textSecondary,

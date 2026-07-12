@@ -71,22 +71,27 @@ index d9690e3..bdf518d 100644
  
    fun record(options: RecordingOptions, promise: Promise, cacheDirectory: File) {
 diff --git a/node_modules/expo-camera/ios/CameraViewModule.swift b/node_modules/expo-camera/ios/CameraViewModule.swift
-index cccd73f..3a2ff2a 100644
+index cccd73f..695bef9 100644
 --- a/node_modules/expo-camera/ios/CameraViewModule.swift
 +++ b/node_modules/expo-camera/ios/CameraViewModule.swift
-@@ -116,6 +116,10 @@ public final class CameraViewModule: Module, ScannerResultHandler {
+@@ -116,6 +116,15 @@ public final class CameraViewModule: Module, ScannerResultHandler {
          }
        }
  
 +      Prop("torchLevel") { (view, level: Double?) in
-+        view.torchLevel = Float(level ?? 1.0)
++        let next = Float(level ?? 1.0)
++        if view.torchLevel != next {
++          view.torchLevel = next
++        } else if view.torchEnabled {
++          view.refreshTorch()
++        }
 +      }
 +
        Prop("pictureSize") { (view, pictureSize: PictureSize?) in
          if let pictureSize, view.pictureSize != pictureSize {
            view.pictureSize = pictureSize
 diff --git a/node_modules/expo-camera/ios/Current/CameraSessionManager.swift b/node_modules/expo-camera/ios/Current/CameraSessionManager.swift
-index 2b68d31..34bbaa2 100644
+index 2b68d31..45b25a9 100644
 --- a/node_modules/expo-camera/ios/Current/CameraSessionManager.swift
 +++ b/node_modules/expo-camera/ios/Current/CameraSessionManager.swift
 @@ -12,6 +12,7 @@ protocol CameraSessionManagerDelegate: AnyObject {
@@ -97,7 +102,7 @@ index 2b68d31..34bbaa2 100644
    var autoFocus: AVCaptureDevice.FocusMode { get }
    var zoom: CGFloat { get }
    var onMountError: EventDispatcher { get }
-@@ -185,8 +186,19 @@ class CameraSessionManager: NSObject, DeviceDiscoveryDelegate {
+@@ -185,8 +186,16 @@ class CameraSessionManager: NSObject, DeviceDiscoveryDelegate {
      do {
        try device.lockForConfiguration()
        defer { device.unlockForConfiguration() }
@@ -107,9 +112,6 @@ index 2b68d31..34bbaa2 100644
 +        let level = max(0.0, min(1.0, delegate.torchLevel))
 +        if level >= 0.01, device.isTorchModeSupported(.on) {
 +          let clamped = min(level, AVCaptureDevice.maxAvailableTorchLevel)
-+          if device.torchMode == .on {
-+            device.torchMode = .off
-+          }
 +          try device.setTorchModeOn(level: clamped)
 +        } else if device.isTorchModeSupported(.off) {
 +          device.torchMode = .off
@@ -120,18 +122,22 @@ index 2b68d31..34bbaa2 100644
      } catch {
        log.info("\(#function): \(error.localizedDescription)")
 diff --git a/node_modules/expo-camera/ios/Current/CameraView.swift b/node_modules/expo-camera/ios/Current/CameraView.swift
-index 7bf1b37..c7eb32d 100644
+index 7bf1b37..74615b5 100644
 --- a/node_modules/expo-camera/ios/Current/CameraView.swift
 +++ b/node_modules/expo-camera/ios/Current/CameraView.swift
-@@ -90,6 +90,14 @@ public class CameraView: ExpoView, EXAppLifecycleListener, EXCameraInterface, Ca
+@@ -90,6 +90,18 @@ public class CameraView: ExpoView, EXAppLifecycleListener, EXCameraInterface, Ca
      }
    }
  
 +  var torchLevel: Float = 1.0 {
 +    didSet {
-+      sessionQueue.async {
-+        self.sessionManager.enableTorch()
-+      }
++      refreshTorch()
++    }
++  }
++
++  func refreshTorch() {
++    sessionQueue.async {
++      self.sessionManager.enableTorch()
 +    }
 +  }
 +

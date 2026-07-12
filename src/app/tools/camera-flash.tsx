@@ -98,52 +98,54 @@ export default function CameraFlashToolScreen() {
   return (
     <View style={styles.root}>
       <Stack.Screen options={{ title: '手电筒相机', headerShown: false }} />
-      <GestureDetector gesture={pinchGesture}>
-        <View style={styles.cameraContainer}>
-          <CameraView
-            style={StyleSheet.absoluteFill}
-            facing="back"
-            autofocus="off"
-            enableTorch={torchActive}
-            torchLevel={brightness}
-            zoom={zoom}
-            onCameraReady={handleCameraReady}
-          />
-
-          <View style={[styles.focusRing, styles.focusRingCenter]} pointerEvents="none">
-            <View style={styles.focusCornerTL} />
-            <View style={styles.focusCornerTR} />
-            <View style={styles.focusCornerBL} />
-            <View style={styles.focusCornerBR} />
+      <View style={styles.cameraContainer}>
+        <GestureDetector gesture={pinchGesture}>
+          <View style={StyleSheet.absoluteFill}>
+            <CameraView
+              style={StyleSheet.absoluteFill}
+              facing="back"
+              autofocus="off"
+              enableTorch={torchActive}
+              torchLevel={brightness}
+              zoom={zoom}
+              onCameraReady={handleCameraReady}
+            />
           </View>
+        </GestureDetector>
 
-          <View style={[styles.topBar, { paddingTop: insets.top }]} pointerEvents="box-none">
-            <Pressable style={styles.backButton} onPress={() => router.back()} hitSlop={8}>
-              <Ionicons name="chevron-back" size={24} color="#fff" />
-            </Pressable>
-            <Text style={styles.topTitle} numberOfLines={1}>
-              手电筒相机
-            </Text>
-            <View style={styles.zoomBadge}>
-              <Text style={styles.zoomText}>{Math.round(zoom * 100)}%</Text>
-            </View>
-          </View>
+        <View style={[styles.focusRing, styles.focusRingCenter]} pointerEvents="none">
+          <View style={styles.focusCornerTL} />
+          <View style={styles.focusCornerTR} />
+          <View style={styles.focusCornerBL} />
+          <View style={styles.focusCornerBR} />
+        </View>
 
-          <View style={[styles.bottomPanel, { paddingBottom: insets.bottom + 32 }]}>
-            <View style={styles.statusRow}>
-              <View style={[styles.statusDot, torchEnabled && styles.statusDotOn]} />
-              <Text style={styles.statusText}>
-                {torchEnabled ? '闪光灯已开启' : '闪光灯已关闭'}
-              </Text>
-              <Text style={styles.hintText}>双指捏合缩放 · 系统自动对焦</Text>
-            </View>
-            <BrightnessSlider value={brightness} onValueChange={setBrightness} />
-            <Text style={styles.platformNote}>
-              亮度通过原生 torch 级别调节；低于 5% 关闭闪光灯。
-            </Text>
+        <View style={[styles.topBar, { paddingTop: insets.top }]} pointerEvents="box-none">
+          <Pressable style={styles.backButton} onPress={() => router.back()} hitSlop={8}>
+            <Ionicons name="chevron-back" size={24} color="#fff" />
+          </Pressable>
+          <Text style={styles.topTitle} numberOfLines={1}>
+            手电筒相机
+          </Text>
+          <View style={styles.zoomBadge}>
+            <Text style={styles.zoomText}>{Math.round(zoom * 100)}%</Text>
           </View>
         </View>
-      </GestureDetector>
+
+        <View style={[styles.bottomPanel, { paddingBottom: insets.bottom + 32 }]}>
+          <View style={styles.statusRow}>
+            <View style={[styles.statusDot, torchEnabled && styles.statusDotOn]} />
+            <Text style={styles.statusText}>
+              {torchEnabled ? '闪光灯已开启' : '闪光灯已关闭'}
+            </Text>
+            <Text style={styles.hintText}>双指捏合缩放 · 系统自动对焦</Text>
+          </View>
+          <BrightnessSlider value={brightness} onValueChange={setBrightness} />
+          <Text style={styles.platformNote}>
+            亮度通过原生 torch 级别调节；低于 5% 关闭闪光灯。
+          </Text>
+        </View>
+      </View>
     </View>
   );
 }

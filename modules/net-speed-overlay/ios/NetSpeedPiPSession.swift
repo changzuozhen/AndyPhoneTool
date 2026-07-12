@@ -100,8 +100,6 @@ final class NetSpeedPiPSession: NSObject {
     }
 
     let view = SpeedPiPView(frame: CGRect(x: -1000, y: -1000, width: 360, height: 56))
-    view.isHidden = true
-    view.alpha = 0
     view.isUserInteractionEnabled = false
     window.addSubview(view)
     displayView = view
